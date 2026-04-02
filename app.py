@@ -37,7 +37,7 @@ df = load_data()
 st.sidebar.image(
     "https://upload.wikimedia.org/wikipedia/commons/"
     "thumb/f/fa/Beijing_montage.jpg/320px-Beijing_montage.jpg",
-    use_column_width=True
+    use_container_width=True   # ✅ CORRIGÉ (use_column_width déprécié)
 )
 st.sidebar.title("🏙️ Smart City Beijing")
 st.sidebar.markdown("**Prévision PM2.5 — J+1**")
@@ -80,6 +80,8 @@ if page == "🏠 Accueil & Prédiction":
             0, 500, 80)
         pm25_lag_1h   = st.slider(
             "PM2.5 il y a 1h (µg/m³)", 0, 500, 75)
+        pm25_lag_12h  = st.slider(                          # ✅ CORRIGÉ : slider dédié
+            "PM2.5 il y a 12h (µg/m³)", 0, 500, 80)
         pm25_roll_12h = st.slider(
             "PM2.5 moyen (12 dernières heures) µg/m³",
             0, 500, 85)
@@ -161,7 +163,7 @@ if page == "🏠 Accueil & Prédiction":
     input_dict = {
         "pm25_lag_1h"     : pm25_lag_1h,
         "pm25_lag_6h"     : pm25_lag_6h,
-        "pm25_lag_12h"    : pm25_roll_12h,
+        "pm25_lag_12h"    : pm25_lag_12h,   # ✅ CORRIGÉ : valeur indépendante
         "pm25_lag_24h"    : pm25_lag_24h,
         "pm25_roll_3h"    : pm25_roll_3h,
         "pm25_roll_12h"   : pm25_roll_12h,
@@ -359,8 +361,7 @@ elif page == "🔍 Analyse des performances":
 
     st.title("🔍 Performances du modèle sur 2014")
 
-    # Recalcul prédictions sur test set
-    test_df = df[df.index.year == 2014].copy()
+    # ✅ CORRIGÉ : suppression de test_df inutilisé
 
     col1, col2, col3 = st.columns(3)
     col1.metric("RMSE", f"{stats['rmse']:.2f} µg/m³",
@@ -443,9 +444,3 @@ elif page == "ℹ️ À propos du modèle":
         "[UCI ML Repository](https://archive.ics.uci.edu/ml/"
         "datasets/Beijing+PM2.5+Data)"
     )
-
-
-
-
-
-
