@@ -647,8 +647,7 @@ if page == "Accueil & Prediction":
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number+delta",
                 value=prediction,
-                delta={"reference": stats["mean_pm25"],
-                       "label": "vs moyenne historique"},
+                delta={"reference": stats["mean_pm25"]},
                 gauge={
                     "axis": {"range": [0, 400]},
                     "bar" : {"color": couleur},
