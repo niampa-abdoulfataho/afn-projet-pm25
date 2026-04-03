@@ -17,84 +17,343 @@ st.set_page_config(
 # ── CSS personnalisé ──────────────────────────────────────────
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ═══ SIDEBAR ═══════════════════════════════════════════════ */
 [data-testid="stSidebar"] {
-    background-color: #0f1117;
-    border-right: 1px solid #1e2130;
+    background: linear-gradient(180deg, #080c10 0%, #0b1018 100%);
+    border-right: 1px solid rgba(255,255,255,0.06);
 }
 [data-testid="stSidebar"] > div:first-child { padding: 0; }
 
 .sidebar-brand {
     display: flex; align-items: center; gap: 12px;
-    padding: 24px 20px 20px 20px;
-    border-bottom: 1px solid #1e2130;
-    margin-bottom: 8px;
+    padding: 28px 20px 22px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 10px;
 }
 .sidebar-brand-icon {
-    width: 36px; height: 36px; border-radius: 8px;
-    background: #1D9E75; display: flex;
-    align-items: center; justify-content: center; flex-shrink: 0;
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, #1D9E75, #0d6e51);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(29,158,117,0.3);
 }
-.sidebar-brand-title { font-size: 15px; font-weight: 600; color: #ffffff; line-height: 1.2; letter-spacing: -0.2px; }
-.sidebar-brand-sub { font-size: 11px; color: #6b7280; font-weight: 400; margin-top: 1px; }
+.sidebar-brand-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600; color: #f0f4f8;
+    line-height: 1.2; letter-spacing: -0.3px;
+}
+.sidebar-brand-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: #4b5a6a; font-weight: 400; margin-top: 2px;
+    letter-spacing: 0.05em;
+}
 
 .sidebar-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #0d2a1f; color: #34d399; font-size: 11px; font-weight: 500;
-    padding: 4px 10px; border-radius: 20px;
-    margin: 0 20px 16px 20px; border: 1px solid #1a4a34;
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(29,158,117,0.08); color: #34d399;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 500;
+    padding: 5px 12px; border-radius: 20px;
+    margin: 0 20px 18px 20px;
+    border: 1px solid rgba(29,158,117,0.2);
 }
-.sidebar-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #1D9E75; }
+.sidebar-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: #1D9E75;
+    box-shadow: 0 0 6px #1D9E75;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+}
 
 .sidebar-section-label {
-    font-size: 10px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.08em; color: #4b5563; padding: 0 20px 8px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.12em; color: #2d3748; padding: 0 20px 10px 20px;
 }
 
 [data-testid="stSidebar"] .stRadio > label { display: none; }
-[data-testid="stSidebar"] .stRadio > div { gap: 2px !important; display: flex; flex-direction: column; }
+[data-testid="stSidebar"] .stRadio > div { gap: 1px !important; display: flex; flex-direction: column; }
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
     display: flex !important; align-items: center !important;
-    padding: 9px 20px !important; border-radius: 0 !important;
-    font-size: 13.5px !important; font-weight: 400 !important;
-    color: #9ca3af !important; cursor: pointer !important;
+    padding: 10px 20px !important; border-radius: 0 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 13px !important; font-weight: 400 !important;
+    color: #4b5a6a !important; cursor: pointer !important;
     margin: 0 !important; border: none !important; background: transparent !important;
+    transition: all 0.15s !important;
+    border-left: 2px solid transparent !important;
 }
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {
-    background: #1a1f2e !important; color: #e5e7eb !important;
+    background: rgba(255,255,255,0.03) !important; color: #94a3b8 !important;
 }
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] input[type="radio"] { display: none !important; }
 
 [data-testid="stSidebar"] img {
-    border-radius: 10px; margin: 0 20px;
+    border-radius: 12px; margin: 0 20px;
     width: calc(100% - 40px) !important;
-    object-fit: cover; height: 110px; margin-bottom: 16px;
+    object-fit: cover; height: 120px; margin-bottom: 18px;
+    opacity: 0.85;
+    border: 1px solid rgba(255,255,255,0.07);
 }
 
 .sidebar-metrics {
-    margin: 20px; border-top: 1px solid #1e2130; padding-top: 16px;
+    margin: 0 16px 20px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 10px; padding: 14px;
+}
+.sidebar-metrics-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: #2d3748; text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 10px; font-weight: 500;
 }
 .sidebar-metric-row {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 6px 0; border-bottom: 1px solid #111827;
+    padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
 }
-.sidebar-metric-label { font-size: 11px; color: #6b7280; }
-.sidebar-metric-value { font-size: 12px; font-weight: 500; color: #d1d5db; font-variant-numeric: tabular-nums; }
+.sidebar-metric-label { font-family: 'DM Sans', sans-serif; font-size: 11px; color: #4b5a6a; }
+.sidebar-metric-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 500; color: #94a3b8;
+}
 
-.main .block-container { padding-top: 2rem; padding-left: 2.5rem; padding-right: 2.5rem; }
+/* ═══ PAGE PRINCIPALE ═══════════════════════════════════════ */
+.main .block-container {
+    padding-top: 2.5rem; padding-left: 3rem; padding-right: 3rem;
+    max-width: 1400px;
+}
 
 [data-testid="stMetric"] {
-    background: #f9fafb; border: 1px solid #e5e7eb;
-    border-radius: 10px; padding: 14px 18px;
+    background: #ffffff; border: 1px solid #e8ecf0;
+    border-radius: 12px; padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
-[data-testid="stMetricLabel"] { font-size: 12px !important; color: #6b7280 !important; font-weight: 500 !important; }
-[data-testid="stMetricValue"] { font-size: 20px !important; font-weight: 600 !important; color: #111827 !important; }
+[data-testid="stMetricLabel"] { font-size: 11px !important; color: #94a3b8 !important; font-weight: 500 !important; text-transform: uppercase; letter-spacing: 0.05em; }
+[data-testid="stMetricValue"] { font-size: 22px !important; font-weight: 700 !important; color: #0f172a !important; letter-spacing: -0.5px; }
 
 .stButton > button[kind="primary"] {
-    background: #185FA5 !important; border: none !important;
-    border-radius: 8px !important; font-weight: 500 !important;
-    font-size: 14px !important; padding: 10px 20px !important;
+    background: #0f172a !important; border: none !important;
+    border-radius: 10px !important; font-weight: 600 !important;
+    font-size: 14px !important; padding: 12px 24px !important;
+    letter-spacing: 0.02em !important;
+    transition: all 0.2s !important;
 }
-.stButton > button[kind="primary"]:hover { opacity: 0.88 !important; }
+.stButton > button[kind="primary"]:hover {
+    background: #1D9E75 !important; transform: translateY(-1px) !important;
+}
+
+/* ═══ RAPPORT A PROPOS ══════════════════════════════════════ */
+.report-hero {
+    background: linear-gradient(135deg, #080c10 0%, #0d1a14 50%, #080c10 100%);
+    border-radius: 20px;
+    padding: 56px 64px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(29,158,117,0.15);
+}
+.report-hero::before {
+    content: '';
+    position: absolute; top: -60px; right: -60px;
+    width: 300px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(29,158,117,0.12) 0%, transparent 70%);
+}
+.report-hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: #1D9E75; letter-spacing: 0.15em;
+    text-transform: uppercase; margin-bottom: 16px; font-weight: 500;
+}
+.report-hero-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 48px; color: #f0f4f8; line-height: 1.1;
+    letter-spacing: -1px; margin-bottom: 12px; font-weight: 400;
+}
+.report-hero-title em {
+    font-style: italic; color: #1D9E75;
+}
+.report-hero-subtitle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px; color: #4b5a6a; line-height: 1.6;
+    max-width: 580px; font-weight: 400;
+}
+.report-hero-meta {
+    display: flex; gap: 32px; margin-top: 32px; padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+}
+.report-hero-meta-item { }
+.report-hero-meta-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: #2d3748; text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 4px;
+}
+.report-hero-meta-value {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; color: #94a3b8; font-weight: 400;
+}
+
+/* Section headers */
+.report-section-header {
+    display: flex; align-items: center; gap: 16px;
+    margin: 48px 0 28px 0;
+}
+.report-section-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: #1D9E75; font-weight: 500;
+    background: rgba(29,158,117,0.08);
+    border: 1px solid rgba(29,158,117,0.2);
+    padding: 4px 10px; border-radius: 20px;
+    letter-spacing: 0.05em;
+}
+.report-section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px; color: #0f172a; font-weight: 400;
+    letter-spacing: -0.5px;
+}
+.report-section-line {
+    flex: 1; height: 1px; background: #e8ecf0;
+}
+
+/* Stat cards grand format */
+.stat-cards-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    margin-bottom: 32px;
+}
+.stat-card {
+    background: #ffffff;
+    border: 1px solid #e8ecf0;
+    border-radius: 16px; padding: 28px 24px;
+    position: relative; overflow: hidden;
+}
+.stat-card-accent {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+}
+.stat-card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: #94a3b8; text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 12px;
+}
+.stat-card-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 42px; color: #0f172a; line-height: 1;
+    letter-spacing: -1px; margin-bottom: 6px;
+}
+.stat-card-unit {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; color: #94a3b8;
+}
+.stat-card-desc {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; color: #64748b; margin-top: 12px;
+    line-height: 1.5; padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Timeline méthodologique */
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before {
+    content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px;
+    width: 1px; background: linear-gradient(to bottom, #1D9E75, #e8ecf0);
+}
+.timeline-item { position: relative; margin-bottom: 28px; }
+.timeline-dot {
+    position: absolute; left: -28px; top: 6px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #1D9E75; border: 3px solid #f8fafc;
+    box-shadow: 0 0 0 1px #1D9E75;
+}
+.timeline-step {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: #1D9E75; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;
+}
+.timeline-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 6px;
+}
+.timeline-desc {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; color: #64748b; line-height: 1.6;
+}
+
+/* Feature chips */
+.feature-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.feature-chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: #334155;
+    background: #f1f5f9; border: 1px solid #e2e8f0;
+    padding: 4px 10px; border-radius: 6px;
+}
+
+/* Tableau comparatif stylisé */
+.model-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.model-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: #94a3b8; padding: 12px 16px; text-align: left;
+    border-bottom: 1px solid #e8ecf0; font-weight: 500;
+}
+.model-table td {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px; color: #334155;
+    padding: 14px 16px; border-bottom: 1px solid #f1f5f9;
+}
+.model-table tr.winner { background: #f0fdf8; }
+.model-table tr.winner td { color: #0f172a; font-weight: 600; }
+.winner-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: #1D9E75;
+    background: rgba(29,158,117,0.1);
+    border: 1px solid rgba(29,158,117,0.3);
+    padding: 2px 8px; border-radius: 20px;
+    margin-left: 8px; vertical-align: middle;
+}
+
+/* Limite cards */
+.limit-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.limit-card {
+    background: #fffbf0; border: 1px solid #fde68a;
+    border-radius: 12px; padding: 18px 20px;
+    border-left: 3px solid #f59e0b;
+}
+.limit-card-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600; color: #78350f; margin-bottom: 4px;
+}
+.limit-card-desc {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; color: #92400e; line-height: 1.5;
+}
+
+/* Footer auteur */
+.author-card {
+    display: flex; align-items: center; gap: 20px;
+    background: #0f172a; border-radius: 16px;
+    padding: 28px 32px; margin-top: 40px;
+}
+.author-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, #1D9E75, #185FA5);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.author-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px; color: #f0f4f8; margin-bottom: 2px;
+}
+.author-role {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: #4b5a6a; letter-spacing: 0.05em;
+}
+.author-link {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; color: #1D9E75; margin-top: 8px; display: block;
+    text-decoration: none;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -527,51 +786,357 @@ elif page == "Analyse des performances":
     """)
 
 # ══════════════════════════════════════════════════════════════
-# PAGE 4 — À propos
+# PAGE 4 — À propos — RAPPORT COMPLET
 # ══════════════════════════════════════════════════════════════
 elif page == "A propos du modele":
 
-    st.title("ℹ️ À propos du projet")
+    # ── HERO ─────────────────────────────────────────────────
+    st.markdown("""
+    <div class="report-hero">
+        <div class="report-hero-tag">Rapport technique &nbsp;·&nbsp; Smart City &nbsp;·&nbsp; 2025</div>
+        <div class="report-hero-title">
+            Prévision de la <em>qualité de l'air</em><br>à Beijing par Machine Learning
+        </div>
+        <div class="report-hero-subtitle">
+            Modélisation prédictive du PM2.5 à horizon 24h à partir de données
+            météorologiques et de séries temporelles de pollution. Une approche
+            orientée aide à la décision urbaine.
+        </div>
+        <div class="report-hero-meta">
+            <div class="report-hero-meta-item">
+                <div class="report-hero-meta-label">Auteur</div>
+                <div class="report-hero-meta-value">Abdoul Fataho NIAMPA</div>
+            </div>
+            <div class="report-hero-meta-item">
+                <div class="report-hero-meta-label">Domaine</div>
+                <div class="report-hero-meta-value">Data Science / Smart City</div>
+            </div>
+            <div class="report-hero-meta-item">
+                <div class="report-hero-meta-label">Données</div>
+                <div class="report-hero-meta-value">UCI Beijing PM2.5 Dataset</div>
+            </div>
+            <div class="report-hero-meta-item">
+                <div class="report-hero-meta-label">Période</div>
+                <div class="report-hero-meta-value">2010 – 2014</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── SECTION 1 — CONTEXTE ─────────────────────────────────
+    st.markdown("""
+    <div class="report-section-header">
+        <span class="report-section-number">01</span>
+        <span class="report-section-title">Contexte & Enjeux</span>
+        <div class="report-section-line"></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_ctx1, col_ctx2 = st.columns([3, 2])
+    with col_ctx1:
+        st.markdown("""
+        <div style="font-family:'DM Sans',sans-serif; font-size:15px; color:#334155; line-height:1.8;">
+        <p>
+        La pollution aux particules fines <strong style="color:#0f172a;">PM2.5</strong> constitue
+        l'un des risques environnementaux les plus graves pour la santé publique en milieu urbain.
+        À Beijing, ville de plus de 21 millions d'habitants, les épisodes de pollution intense
+        affectent régulièrement la vie quotidienne, avec des pics atteignant
+        <strong style="color:#dc2626;">500 µg/m³</strong> — soit 20 fois le seuil recommandé
+        par l'OMS (25 µg/m³ sur 24h).
+        </p>
+        <p style="margin-top:16px;">
+        Dans le cadre d'une vision <strong style="color:#0f172a;">Smart City</strong>, ce projet
+        vise à fournir aux décideurs urbains un outil de prévision fiable à horizon J+1,
+        permettant d'anticiper les alertes sanitaires, de planifier des restrictions de trafic
+        et de communiquer en amont vers les populations sensibles.
+        </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_ctx2:
+        st.markdown("""
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-left:3px solid #dc2626;
+                    border-radius:12px; padding:20px 22px; font-family:'DM Sans',sans-serif;">
+            <div style="font-size:11px; color:#991b1b; text-transform:uppercase; letter-spacing:0.08em;
+                        font-weight:600; margin-bottom:10px;">Seuils OMS — PM2.5</div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0;
+                        border-bottom:1px solid #fecaca; font-size:13px;">
+                <span style="color:#64748b;">Bon</span>
+                <span style="color:#16a34a; font-weight:600;">&lt; 50 µg/m³</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0;
+                        border-bottom:1px solid #fecaca; font-size:13px;">
+                <span style="color:#64748b;">Modéré</span>
+                <span style="color:#d97706; font-weight:600;">50 – 100 µg/m³</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0;
+                        border-bottom:1px solid #fecaca; font-size:13px;">
+                <span style="color:#64748b;">Mauvais</span>
+                <span style="color:#ea580c; font-weight:600;">100 – 150 µg/m³</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0;
+                        border-bottom:1px solid #fecaca; font-size:13px;">
+                <span style="color:#64748b;">Très mauvais</span>
+                <span style="color:#dc2626; font-weight:600;">150 – 250 µg/m³</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0;
+                        font-size:13px;">
+                <span style="color:#64748b;">Dangereux</span>
+                <span style="color:#7f1d1d; font-weight:600;">&gt; 250 µg/m³</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── SECTION 2 — DONNÉES ──────────────────────────────────
+    st.markdown("""
+    <div class="report-section-header">
+        <span class="report-section-number">02</span>
+        <span class="report-section-title">Jeu de données</span>
+        <div class="report-section-line"></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="stat-cards-grid">
+        <div class="stat-card">
+            <div class="stat-card-accent" style="background:linear-gradient(90deg,#1D9E75,#34d399);"></div>
+            <div class="stat-card-label">Observations horaires</div>
+            <div class="stat-card-value">43 824</div>
+            <div class="stat-card-unit">enregistrements</div>
+            <div class="stat-card-desc">Données collectées sur 5 ans en continu (2010–2014) à la station US Embassy Beijing.</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-accent" style="background:linear-gradient(90deg,#185FA5,#60a5fa);"></div>
+            <div class="stat-card-label">PM2.5 moyen historique</div>
+            <div class="stat-card-value">{stats['mean_pm25']:.0f}</div>
+            <div class="stat-card-unit">µg/m³</div>
+            <div class="stat-card-desc">Concentration moyenne observée sur l'ensemble de la période d'étude.</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-accent" style="background:linear-gradient(90deg,#7c3aed,#a78bfa);"></div>
+            <div class="stat-card-label">Features engineered</div>
+            <div class="stat-card-value">39</div>
+            <div class="stat-card-unit">variables</div>
+            <div class="stat-card-desc">Variables construites à partir des séries temporelles brutes et des données météo.</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("""
-    ## 🏙️ Prévision PM2.5 — Smart City Beijing
+    <div style="margin-bottom:8px; font-family:'DM Sans',sans-serif;
+                font-size:13px; color:#64748b;">Variables source disponibles :</div>
+    <div class="feature-chips">
+        <span class="feature-chip">pm2.5</span>
+        <span class="feature-chip">TEMP</span>
+        <span class="feature-chip">PRES</span>
+        <span class="feature-chip">DEWP</span>
+        <span class="feature-chip">Iws (vent)</span>
+        <span class="feature-chip">Is (neige)</span>
+        <span class="feature-chip">Ir (pluie)</span>
+        <span class="feature-chip">cbwd (direction vent)</span>
+        <span class="feature-chip">year / month / day / hour</span>
+    </div>
+    """, unsafe_allow_html=True)
 
-    ### Contexte
-    Ce projet s'inscrit dans le cadre d'une **Smart City** : utiliser
-    les données et le Machine Learning pour anticiper les épisodes de
-    pollution et aider les décideurs urbains à prendre des mesures
-    proactives.
+    # ── SECTION 3 — MÉTHODOLOGIE ─────────────────────────────
+    st.markdown("""
+    <div class="report-section-header">
+        <span class="report-section-number">03</span>
+        <span class="report-section-title">Méthodologie</span>
+        <div class="report-section-line"></div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    ### Données
-    - **Source** : UCI Beijing PM2.5 Dataset
-    - **Période** : 2010–2014 (43 824 observations horaires)
-    - **Variables** : météo (température, vent, pression, humidité)
-      + pollution (PM2.5)
+    col_m1, col_m2 = st.columns([1, 1])
+    with col_m1:
+        st.markdown("""
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-step">Étape 01</div>
+                <div class="timeline-title">Exploration & Analyse</div>
+                <div class="timeline-desc">
+                    Analyse de saisonnalité (décomposition STL), étude de la
+                    stationnarité (test ADF), calcul des fonctions d'autocorrélation
+                    (ACF / PACF) pour définir les lags pertinents.
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-step">Étape 02</div>
+                <div class="timeline-title">Feature Engineering</div>
+                <div class="timeline-desc">
+                    Construction de 39 features : lags temporels (1h, 6h, 12h, 24h,
+                    1j, 2j, 7j), moyennes glissantes (3h, 12h, 24h, 3j, 7j, 14j),
+                    variables météo dérivées (ressenti thermique, produits croisés),
+                    encodages cycliques (saison, vent).
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    ### Méthodologie
-    1. **Exploration** : analyse de saisonnalité, ACF/PACF,
-       décomposition STL
-    2. **Feature Engineering** : 32 features (lags, rolling means,
-       variables météo dérivées, encodages)
-    3. **Modélisation** : Régression Linéaire (baseline),
-       Random Forest, XGBoost — split temporel 2010–2013 / 2014
-    4. **Interprétabilité** : SHAP values, Feature Importance
+    with col_m2:
+        st.markdown("""
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-step">Étape 03</div>
+                <div class="timeline-title">Modélisation & Validation</div>
+                <div class="timeline-desc">
+                    Split temporel strict : entraînement sur 2010–2013,
+                    test sur 2014 (aucune fuite de données future).
+                    3 modèles comparés : Régression Linéaire (baseline),
+                    Random Forest (500 arbres), XGBoost.
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-step">Étape 04</div>
+                <div class="timeline-title">Interprétabilité</div>
+                <div class="timeline-desc">
+                    Analyse SHAP (SHapley Additive exPlanations) pour quantifier
+                    la contribution de chaque feature. Feature importance globale
+                    et locale pour explicabilité des prédictions.
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    ### Modèle retenu
-    **Random Forest** — R²=0.568, RMSE=52.12 µg/m³, MAE=37.26 µg/m³
+    # ── SECTION 4 — RÉSULTATS ────────────────────────────────
+    st.markdown("""
+    <div class="report-section-header">
+        <span class="report-section-number">04</span>
+        <span class="report-section-title">Résultats & Comparaison des modèles</span>
+        <div class="report-section-line"></div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    ### Limites
-    - Données limitées à Beijing
-    - Absence de données trafic et émissions industrielles
-    - Horizon de prévision : 24h uniquement
+    st.markdown(f"""
+    <table class="model-table">
+        <thead>
+            <tr>
+                <th>Modèle</th>
+                <th>RMSE (µg/m³)</th>
+                <th>MAE (µg/m³)</th>
+                <th>R²</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Régression Linéaire</td>
+                <td>52.00</td>
+                <td>38.88</td>
+                <td>0.570</td>
+                <td><span style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                    color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:20px;">Baseline</span></td>
+            </tr>
+            <tr class="winner">
+                <td>Random Forest <span class="winner-badge">Retenu</span></td>
+                <td style="color:#1D9E75;">{stats['rmse']:.2f}</td>
+                <td style="color:#1D9E75;">{stats['mae']:.2f}</td>
+                <td style="color:#1D9E75;">{stats['r2']:.3f}</td>
+                <td><span style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                    color:#1D9E75;background:rgba(29,158,117,0.1);padding:2px 8px;
+                    border-radius:20px;border:1px solid rgba(29,158,117,0.3);">Production</span></td>
+            </tr>
+            <tr>
+                <td>XGBoost</td>
+                <td>51.50</td>
+                <td>36.76</td>
+                <td>0.579</td>
+                <td><span style="font-family:'JetBrains Mono',monospace;font-size:10px;
+                    color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:20px;">Candidat</span></td>
+            </tr>
+        </tbody>
+    </table>
+    <div style="font-family:'DM Sans',sans-serif; font-size:12px; color:#94a3b8; margin-top:12px; font-style:italic;">
+        Evaluation sur le jeu de test 2014 (split temporel strict — aucune donnée future utilisée à l'entraînement).
+    </div>
+    """, unsafe_allow_html=True)
 
-    ### Auteur
-    **Abdoul Fataho NIAMPA** — Projet Data Scientist Smart City
-    """)
+    st.markdown("""
+    <div style="margin-top:28px; padding:24px 28px; background:#f8fafc; border-radius:14px;
+                border:1px solid #e2e8f0; font-family:'DM Sans',sans-serif;">
+        <div style="font-size:13px; font-weight:600; color:#0f172a; margin-bottom:14px;">
+            Lecture des metriques
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div>
+                <span style="color:#1D9E75; font-weight:700;">R² = 0.568</span>
+                <span style="color:#64748b; font-size:13px;"> — Le modèle explique
+                <strong>57% de la variance</strong> du PM2.5 journalier, cohérent
+                avec la littérature scientifique pour ce type de prévision.</span>
+            </div>
+            <div>
+                <span style="color:#185FA5; font-weight:700;">MAE = 37 µg/m³</span>
+                <span style="color:#64748b; font-size:13px;"> — En conditions réelles,
+                l'erreur absolue moyenne est de 37 µg/m³, soit environ
+                <strong>38% de la valeur moyenne</strong> historique.</span>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown(
-        "📂 Dataset : "
-        "[UCI ML Repository](https://archive.ics.uci.edu/ml/"
-        "datasets/Beijing+PM2.5+Data)"
-    )
+    # ── SECTION 5 — LIMITES ──────────────────────────────────
+    st.markdown("""
+    <div class="report-section-header">
+        <span class="report-section-number">05</span>
+        <span class="report-section-title">Limites & Perspectives</span>
+        <div class="report-section-line"></div>
+    </div>
+    <div class="limit-grid">
+        <div class="limit-card">
+            <div class="limit-card-title">Portée géographique restreinte</div>
+            <div class="limit-card-desc">Le modèle est entraîné exclusivement sur
+            les données de Beijing. Sa généralisation à d'autres métropoles
+            (Shanghai, Delhi, Paris) nécessiterait un réentraînement spécifique.</div>
+        </div>
+        <div class="limit-card">
+            <div class="limit-card-title">Absence de données trafic & industrie</div>
+            <div class="limit-card-desc">Les émissions liées au trafic routier
+            et aux sites industriels ne sont pas captées. Ces facteurs expliquent
+            une part significative des 42% de variance non modélisée.</div>
+        </div>
+        <div class="limit-card">
+            <div class="limit-card-title">Horizon de prévision limité</div>
+            <div class="limit-card-desc">Le modèle prédit uniquement à horizon
+            J+1 (24h). Une extension à J+2 ou J+3 dégraderait sensiblement
+            les performances sans revoir l'architecture de features.</div>
+        </div>
+        <div class="limit-card">
+            <div class="limit-card-title">Feux agricoles & événements exceptionnels</div>
+            <div class="limit-card-desc">Les pics extrêmes liés à des feux
+            agricoles saisonniers ou des inversions thermiques sont difficiles
+            à anticiper sans données de télédétection satellite.</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── SECTION 6 — AUTEUR ───────────────────────────────────
+    st.markdown("""
+    <div class="author-card">
+        <div class="author-avatar">AN</div>
+        <div>
+            <div class="author-name">Abdoul Fataho NIAMPA</div>
+            <div class="author-role">Data Scientist &nbsp;·&nbsp; Projet Smart City Beijing</div>
+            <a class="author-link"
+               href="https://archive.ics.uci.edu/ml/datasets/Beijing+PM2.5+Data"
+               target="_blank">
+               Source des données — UCI ML Repository →
+            </a>
+        </div>
+        <div style="margin-left:auto; text-align:right;">
+            <div style="font-family:'JetBrains Mono',monospace; font-size:10px;
+                        color:#2d3748; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px;">
+                Version du modele
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#1D9E75;">
+                Random Forest v1.0
+            </div>
+            <div style="font-family:'DM Sans',sans-serif; font-size:12px; color:#4b5a6a; margin-top:4px;">
+                scikit-learn — 500 estimateurs
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
