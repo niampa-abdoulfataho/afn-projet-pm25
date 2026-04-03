@@ -14,6 +14,90 @@ st.set_page_config(
     layout="wide"
 )
 
+# ── CSS personnalisé ──────────────────────────────────────────
+st.markdown("""
+<style>
+[data-testid="stSidebar"] {
+    background-color: #0f1117;
+    border-right: 1px solid #1e2130;
+}
+[data-testid="stSidebar"] > div:first-child { padding: 0; }
+
+.sidebar-brand {
+    display: flex; align-items: center; gap: 12px;
+    padding: 24px 20px 20px 20px;
+    border-bottom: 1px solid #1e2130;
+    margin-bottom: 8px;
+}
+.sidebar-brand-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: #1D9E75; display: flex;
+    align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sidebar-brand-title { font-size: 15px; font-weight: 600; color: #ffffff; line-height: 1.2; letter-spacing: -0.2px; }
+.sidebar-brand-sub { font-size: 11px; color: #6b7280; font-weight: 400; margin-top: 1px; }
+
+.sidebar-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #0d2a1f; color: #34d399; font-size: 11px; font-weight: 500;
+    padding: 4px 10px; border-radius: 20px;
+    margin: 0 20px 16px 20px; border: 1px solid #1a4a34;
+}
+.sidebar-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #1D9E75; }
+
+.sidebar-section-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.08em; color: #4b5563; padding: 0 20px 8px 20px;
+}
+
+[data-testid="stSidebar"] .stRadio > label { display: none; }
+[data-testid="stSidebar"] .stRadio > div { gap: 2px !important; display: flex; flex-direction: column; }
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
+    display: flex !important; align-items: center !important;
+    padding: 9px 20px !important; border-radius: 0 !important;
+    font-size: 13.5px !important; font-weight: 400 !important;
+    color: #9ca3af !important; cursor: pointer !important;
+    margin: 0 !important; border: none !important; background: transparent !important;
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {
+    background: #1a1f2e !important; color: #e5e7eb !important;
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] input[type="radio"] { display: none !important; }
+
+[data-testid="stSidebar"] img {
+    border-radius: 10px; margin: 0 20px;
+    width: calc(100% - 40px) !important;
+    object-fit: cover; height: 110px; margin-bottom: 16px;
+}
+
+.sidebar-metrics {
+    margin: 20px; border-top: 1px solid #1e2130; padding-top: 16px;
+}
+.sidebar-metric-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; border-bottom: 1px solid #111827;
+}
+.sidebar-metric-label { font-size: 11px; color: #6b7280; }
+.sidebar-metric-value { font-size: 12px; font-weight: 500; color: #d1d5db; font-variant-numeric: tabular-nums; }
+
+.main .block-container { padding-top: 2rem; padding-left: 2.5rem; padding-right: 2.5rem; }
+
+[data-testid="stMetric"] {
+    background: #f9fafb; border: 1px solid #e5e7eb;
+    border-radius: 10px; padding: 14px 18px;
+}
+[data-testid="stMetricLabel"] { font-size: 12px !important; color: #6b7280 !important; font-weight: 500 !important; }
+[data-testid="stMetricValue"] { font-size: 20px !important; font-weight: 600 !important; color: #111827 !important; }
+
+.stButton > button[kind="primary"] {
+    background: #185FA5 !important; border: none !important;
+    border-radius: 8px !important; font-weight: 500 !important;
+    font-size: 14px !important; padding: 10px 20px !important;
+}
+.stButton > button[kind="primary"]:hover { opacity: 0.88 !important; }
+</style>
+""", unsafe_allow_html=True)
+
 # ── Chargement modèle & données ───────────────────────────────
 @st.cache_resource
 def load_model():
@@ -34,26 +118,73 @@ model, features, stats = load_model()
 df = load_data()
 
 # ── Sidebar ───────────────────────────────────────────────────
+st.sidebar.markdown("""
+<div class="sidebar-brand">
+    <div class="sidebar-brand-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="4" fill="white"/>
+            <circle cx="10" cy="3" r="2" fill="white" opacity="0.5"/>
+            <circle cx="10" cy="17" r="2" fill="white" opacity="0.5"/>
+            <circle cx="3" cy="10" r="2" fill="white" opacity="0.5"/>
+            <circle cx="17" cy="10" r="2" fill="white" opacity="0.5"/>
+        </svg>
+    </div>
+    <div>
+        <div class="sidebar-brand-title">Smart City</div>
+        <div class="sidebar-brand-sub">Beijing PM2.5 — J+1</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("""
+<div class="sidebar-badge">
+    <div class="sidebar-badge-dot"></div>
+    Modèle actif
+</div>
+""", unsafe_allow_html=True)
+
 st.sidebar.image(
     "https://upload.wikimedia.org/wikipedia/commons/"
     "thumb/f/fa/Beijing_montage.jpg/320px-Beijing_montage.jpg",
-    use_container_width=True   # ✅ CORRIGÉ (use_column_width déprécié)
+    use_container_width=True
 )
-st.sidebar.title("🏙️ Smart City Beijing")
-st.sidebar.markdown("**Prévision PM2.5 — J+1**")
-st.sidebar.markdown("---")
+
+st.sidebar.markdown('<div class="sidebar-section-label">Navigation</div>',
+                    unsafe_allow_html=True)
+
 page = st.sidebar.radio(
     "Navigation",
-    ["🏠 Accueil & Prédiction",
-     "📊 Historique & Tendances",
-     "🔍 Analyse des performances",
-     "ℹ️ À propos du modèle"]
+    ["Accueil & Prediction",
+     "Historique & Tendances",
+     "Analyse des performances",
+     "A propos du modele"]
 )
+
+st.sidebar.markdown(f"""
+<div class="sidebar-metrics">
+    <div class="sidebar-metric-row">
+        <span class="sidebar-metric-label">RMSE</span>
+        <span class="sidebar-metric-value">{stats['rmse']:.1f} µg/m³</span>
+    </div>
+    <div class="sidebar-metric-row">
+        <span class="sidebar-metric-label">MAE</span>
+        <span class="sidebar-metric-value">{stats['mae']:.1f} µg/m³</span>
+    </div>
+    <div class="sidebar-metric-row">
+        <span class="sidebar-metric-label">R²</span>
+        <span class="sidebar-metric-value">{stats['r2']:.3f}</span>
+    </div>
+    <div class="sidebar-metric-row" style="border-bottom:none;">
+        <span class="sidebar-metric-label">Modèle</span>
+        <span class="sidebar-metric-value">Random Forest</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════
 # PAGE 1 — Accueil & Prédiction
 # ══════════════════════════════════════════════════════════════
-if page == "🏠 Accueil & Prédiction":
+if page == "Accueil & Prediction":
 
     st.title("🏙️ Prévision de la Pollution PM2.5 à Beijing")
     st.markdown(
@@ -292,7 +423,7 @@ if page == "🏠 Accueil & Prédiction":
 # ══════════════════════════════════════════════════════════════
 # PAGE 2 — Historique & Tendances
 # ══════════════════════════════════════════════════════════════
-elif page == "📊 Historique & Tendances":
+elif page == "Historique & Tendances":
 
     st.title("📊 Historique de la Pollution PM2.5 — Beijing 2010–2014")
 
@@ -357,7 +488,7 @@ elif page == "📊 Historique & Tendances":
 # ══════════════════════════════════════════════════════════════
 # PAGE 3 — Analyse des performances
 # ══════════════════════════════════════════════════════════════
-elif page == "🔍 Analyse des performances":
+elif page == "Analyse des performances":
 
     st.title("🔍 Performances du modèle sur 2014")
 
@@ -398,7 +529,7 @@ elif page == "🔍 Analyse des performances":
 # ══════════════════════════════════════════════════════════════
 # PAGE 4 — À propos
 # ══════════════════════════════════════════════════════════════
-elif page == "ℹ️ À propos du modèle":
+elif page == "A propos du modele":
 
     st.title("ℹ️ À propos du projet")
 
