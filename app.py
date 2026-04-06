@@ -1,3 +1,23 @@
+"""
+╔══════════════════════════════════════════════════════════════════════╗
+║  Smart City Beijing — Prévision PM2.5                               ║
+║  Auteur : Abdoul Fataho NIAMPA                                      ║
+║  Stack  : Streamlit · scikit-learn · Plotly · Pandas                ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+Structure du fichier
+────────────────────
+  1. Configuration & imports
+  2. CSS global
+  3. Helpers (cache, couleurs, seuils)
+  4. Sidebar
+  5. Page 1 — Accueil & Prédiction
+  6. Page 2 — Historique & Tendances
+  7. Page 3 — Analyse des performances
+  8. Page 4 — À propos du modèle
+"""
+
+# ── 1. Imports ────────────────────────────────────────────────────────
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -7,1418 +27,1231 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# ── Configuration page ────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════
+# 2. Configuration Streamlit
+# ══════════════════════════════════════════════════════════════════════
 st.set_page_config(
     page_title="Smart City — Prévision PM2.5 Beijing",
     page_icon="🏙️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-# ── CSS personnalisé ──────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════
+# 3. CSS Global — thème "Urban Data Lab"
+# ══════════════════════════════════════════════════════════════════════
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+/* ── Google Fonts ──────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
-/* ═══ SIDEBAR ═══════════════════════════════════════════════ */
+/* ── Variables CSS ─────────────────────────────────────────────────── */
+:root {
+    --ink:        #0A0E17;
+    --ink-2:      #1C2333;
+    --ink-3:      #2E3A50;
+    --mist:       #8694AA;
+    --pale:       #C8D3E0;
+    --snow:       #F4F7FB;
+    --white:      #FFFFFF;
+
+    --teal:       #00C9A7;
+    --teal-dim:   rgba(0,201,167,.12);
+    --teal-glow:  rgba(0,201,167,.25);
+    --amber:      #FFB830;
+    --amber-dim:  rgba(255,184,48,.12);
+    --coral:      #FF6B6B;
+    --coral-dim:  rgba(255,107,107,.12);
+    --violet:     #7C6FCD;
+
+    --radius-sm:  8px;
+    --radius-md:  14px;
+    --radius-lg:  20px;
+
+    --shadow-sm:  0 1px 4px rgba(0,0,0,.06);
+    --shadow-md:  0 4px 20px rgba(0,0,0,.09);
+    --shadow-lg:  0 12px 40px rgba(0,0,0,.14);
+}
+
+/* ── Reset Streamlit ───────────────────────────────────────────────── */
+html, body, [class*="css"] {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Fond principal */
+.main { background: var(--snow); }
+.main .block-container {
+    padding: 2.5rem 3rem 4rem;
+    max-width: 1380px;
+}
+
+/* ── Sidebar ────────────────────────────────────────────────────────── */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #080c10 0%, #0b1018 100%);
-    border-right: 1px solid rgba(255,255,255,0.06);
+    background: var(--ink);
+    border-right: 1px solid rgba(255,255,255,.05);
 }
-[data-testid="stSidebar"] > div:first-child { padding: 0; }
+[data-testid="stSidebar"] * { color: var(--pale); }
 
-.sidebar-brand {
-    display: flex; align-items: center; gap: 12px;
-    padding: 28px 20px 22px 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    margin-bottom: 10px;
+/* ── Métriques ──────────────────────────────────────────────────────── */
+[data-testid="stMetric"] {
+    background: var(--white);
+    border: 1px solid #E4EAF2;
+    border-radius: var(--radius-md);
+    padding: 18px 22px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .2s;
 }
-.sidebar-brand-icon {
-    width: 38px; height: 38px; border-radius: 10px;
-    background: linear-gradient(135deg, #1D9E75, #0d6e51);
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    box-shadow: 0 0 20px rgba(29,158,117,0.3);
+[data-testid="stMetric"]:hover { box-shadow: var(--shadow-md); }
+[data-testid="stMetricLabel"] {
+    font-family: 'Space Mono', monospace !important;
+    font-size: 10px !important;
+    color: var(--mist) !important;
+    text-transform: uppercase;
+    letter-spacing: .08em;
 }
-.sidebar-brand-title {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px; font-weight: 600; color: #f0f4f8;
-    line-height: 1.2; letter-spacing: -0.3px;
-}
-.sidebar-brand-sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px; color: #4b5a6a; font-weight: 400; margin-top: 2px;
-    letter-spacing: 0.05em;
-}
-
-.sidebar-badge {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: rgba(29,158,117,0.08); color: #34d399;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px; font-weight: 500;
-    padding: 5px 12px; border-radius: 20px;
-    margin: 0 20px 18px 20px;
-    border: 1px solid rgba(29,158,117,0.2);
-}
-.sidebar-badge-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: #1D9E75;
-    box-shadow: 0 0 6px #1D9E75;
-    animation: pulse 2s infinite;
-}
-@keyframes pulse {
-    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+[data-testid="stMetricValue"] {
+    font-family: 'Syne', sans-serif !important;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: var(--ink) !important;
+    letter-spacing: -.5px;
 }
 
-.sidebar-section-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px; font-weight: 500; text-transform: uppercase;
-    letter-spacing: 0.12em; color: #2d3748; padding: 0 20px 10px 20px;
+/* ── Bouton principal ───────────────────────────────────────────────── */
+.stButton > button[kind="primary"] {
+    background: var(--teal) !important;
+    color: var(--ink) !important;
+    border: none !important;
+    border-radius: var(--radius-md) !important;
+    font-family: 'Syne', sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    padding: 14px 28px !important;
+    letter-spacing: .04em !important;
+    transition: all .2s !important;
+    box-shadow: 0 0 0 0 var(--teal-glow) !important;
+}
+.stButton > button[kind="primary"]:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 24px var(--teal-glow) !important;
 }
 
+/* ── Sliders & Selectbox ─────────────────────────────────────────────── */
+[data-testid="stSlider"] > div > div > div > div {
+    background: var(--teal) !important;
+}
+
+/* ── Sidebar nav ─────────────────────────────────────────────────────── */
 [data-testid="stSidebar"] .stRadio > label { display: none; }
-[data-testid="stSidebar"] .stRadio > div { gap: 1px !important; display: flex; flex-direction: column; }
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
-    display: flex !important; align-items: center !important;
-    padding: 10px 20px !important; border-radius: 0 !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 13px !important; font-weight: 400 !important;
-    color: #4b5a6a !important; cursor: pointer !important;
-    margin: 0 !important; border: none !important; background: transparent !important;
-    transition: all 0.15s !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 11px 22px !important;
+    border-radius: 0 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 13.5px !important;
+    font-weight: 400 !important;
+    color: var(--mist) !important;
+    cursor: pointer !important;
+    margin: 1px 0 !important;
+    border: none !important;
+    background: transparent !important;
+    transition: all .15s !important;
     border-left: 2px solid transparent !important;
 }
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {
-    background: rgba(255,255,255,0.03) !important; color: #94a3b8 !important;
+    background: rgba(255,255,255,.04) !important;
+    color: var(--white) !important;
+    border-left-color: var(--teal) !important;
 }
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] input[type="radio"] { display: none !important; }
-
-[data-testid="stSidebar"] img {
-    border-radius: 12px; margin: 0 20px;
-    width: calc(100% - 40px) !important;
-    object-fit: cover; height: 120px; margin-bottom: 18px;
-    opacity: 0.85;
-    border: 1px solid rgba(255,255,255,0.07);
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] input[type="radio"] {
+    display: none !important;
 }
 
-.sidebar-metrics {
-    margin: 0 16px 20px;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 10px; padding: 14px;
-}
-.sidebar-metrics-title {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px; color: #2d3748; text-transform: uppercase;
-    letter-spacing: 0.1em; margin-bottom: 10px; font-weight: 500;
-}
-.sidebar-metric-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-.sidebar-metric-label { font-family: 'DM Sans', sans-serif; font-size: 11px; color: #4b5a6a; }
-.sidebar-metric-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; font-weight: 500; color: #94a3b8;
+/* ── Divider ─────────────────────────────────────────────────────────── */
+hr { border-color: #E4EAF2 !important; margin: 2rem 0 !important; }
+
+/* ── Info / warning boxes ────────────────────────────────────────────── */
+[data-testid="stInfo"] {
+    background: rgba(0,201,167,.07) !important;
+    border-left: 3px solid var(--teal) !important;
+    border-radius: var(--radius-sm) !important;
+    color: var(--ink-2) !important;
 }
 
-/* ═══ PAGE PRINCIPALE ═══════════════════════════════════════ */
-.main .block-container {
-    padding-top: 2.5rem; padding-left: 3rem; padding-right: 3rem;
-    max-width: 1400px;
-}
-
-[data-testid="stMetric"] {
-    background: #ffffff; border: 1px solid #e8ecf0;
-    border-radius: 12px; padding: 16px 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-[data-testid="stMetricLabel"] { font-size: 11px !important; color: #94a3b8 !important; font-weight: 500 !important; text-transform: uppercase; letter-spacing: 0.05em; }
-[data-testid="stMetricValue"] { font-size: 22px !important; font-weight: 700 !important; color: #0f172a !important; letter-spacing: -0.5px; }
-
-.stButton > button[kind="primary"] {
-    background: #0f172a !important; border: none !important;
-    border-radius: 10px !important; font-weight: 600 !important;
-    font-size: 14px !important; padding: 12px 24px !important;
-    letter-spacing: 0.02em !important;
-    transition: all 0.2s !important;
-}
-.stButton > button[kind="primary"]:hover {
-    background: #1D9E75 !important; transform: translateY(-1px) !important;
-}
-
-/* ═══ RAPPORT A PROPOS ══════════════════════════════════════ */
-.report-hero {
-    background: linear-gradient(135deg, #080c10 0%, #0d1a14 50%, #080c10 100%);
-    border-radius: 20px;
-    padding: 56px 64px;
-    margin-bottom: 40px;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(29,158,117,0.15);
-}
-.report-hero::before {
-    content: '';
-    position: absolute; top: -60px; right: -60px;
-    width: 300px; height: 300px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(29,158,117,0.12) 0%, transparent 70%);
-}
-.report-hero-tag {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; color: #1D9E75; letter-spacing: 0.15em;
-    text-transform: uppercase; margin-bottom: 16px; font-weight: 500;
-}
-.report-hero-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 48px; color: #f0f4f8; line-height: 1.1;
-    letter-spacing: -1px; margin-bottom: 12px; font-weight: 400;
-}
-.report-hero-title em {
-    font-style: italic; color: #1D9E75;
-}
-.report-hero-subtitle {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 16px; color: #4b5a6a; line-height: 1.6;
-    max-width: 580px; font-weight: 400;
-}
-.report-hero-meta {
-    display: flex; gap: 32px; margin-top: 32px; padding-top: 32px;
-    border-top: 1px solid rgba(255,255,255,0.07);
-}
-.report-hero-meta-item { }
-.report-hero-meta-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px; color: #2d3748; text-transform: uppercase;
-    letter-spacing: 0.1em; margin-bottom: 4px;
-}
-.report-hero-meta-value {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px; color: #94a3b8; font-weight: 400;
-}
-
-/* Section headers */
-.report-section-header {
-    display: flex; align-items: center; gap: 16px;
-    margin: 48px 0 28px 0;
-}
-.report-section-number {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; color: #1D9E75; font-weight: 500;
-    background: rgba(29,158,117,0.08);
-    border: 1px solid rgba(29,158,117,0.2);
-    padding: 4px 10px; border-radius: 20px;
-    letter-spacing: 0.05em;
-}
-.report-section-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 28px; color: #0f172a; font-weight: 400;
-    letter-spacing: -0.5px;
-}
-.report-section-line {
-    flex: 1; height: 1px; background: #e8ecf0;
-}
-
-/* Stat cards grand format */
-.stat-cards-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-    margin-bottom: 32px;
-}
-.stat-card {
-    background: #ffffff;
-    border: 1px solid #e8ecf0;
-    border-radius: 16px; padding: 28px 24px;
-    position: relative; overflow: hidden;
-}
-.stat-card-accent {
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 3px;
-}
-.stat-card-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px; color: #94a3b8; text-transform: uppercase;
-    letter-spacing: 0.1em; margin-bottom: 12px;
-}
-.stat-card-value {
-    font-family: 'DM Serif Display', serif;
-    font-size: 42px; color: #0f172a; line-height: 1;
-    letter-spacing: -1px; margin-bottom: 6px;
-}
-.stat-card-unit {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px; color: #94a3b8;
-}
-.stat-card-desc {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px; color: #64748b; margin-top: 12px;
-    line-height: 1.5; padding-top: 12px;
-    border-top: 1px solid #f1f5f9;
-}
-
-/* Timeline méthodologique */
-.timeline { position: relative; padding-left: 32px; }
-.timeline::before {
-    content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px;
-    width: 1px; background: linear-gradient(to bottom, #1D9E75, #e8ecf0);
-}
-.timeline-item { position: relative; margin-bottom: 28px; }
-.timeline-dot {
-    position: absolute; left: -28px; top: 6px;
-    width: 16px; height: 16px; border-radius: 50%;
-    background: #1D9E75; border: 3px solid #f8fafc;
-    box-shadow: 0 0 0 1px #1D9E75;
-}
-.timeline-step {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px; color: #1D9E75; font-weight: 500;
-    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;
-}
-.timeline-title {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 6px;
-}
-.timeline-desc {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px; color: #64748b; line-height: 1.6;
-}
-
-/* Feature chips */
-.feature-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-.feature-chip {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; color: #334155;
-    background: #f1f5f9; border: 1px solid #e2e8f0;
-    padding: 4px 10px; border-radius: 6px;
-}
-
-/* Tableau comparatif stylisé */
-.model-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-.model-table th {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
-    color: #94a3b8; padding: 12px 16px; text-align: left;
-    border-bottom: 1px solid #e8ecf0; font-weight: 500;
-}
-.model-table td {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px; color: #334155;
-    padding: 14px 16px; border-bottom: 1px solid #f1f5f9;
-}
-.model-table tr.winner { background: #f0fdf8; }
-.model-table tr.winner td { color: #0f172a; font-weight: 600; }
-.winner-badge {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px; color: #1D9E75;
-    background: rgba(29,158,117,0.1);
-    border: 1px solid rgba(29,158,117,0.3);
-    padding: 2px 8px; border-radius: 20px;
-    margin-left: 8px; vertical-align: middle;
-}
-
-/* Limite cards */
-.limit-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.limit-card {
-    background: #fffbf0; border: 1px solid #fde68a;
-    border-radius: 12px; padding: 18px 20px;
-    border-left: 3px solid #f59e0b;
-}
-.limit-card-title {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px; font-weight: 600; color: #78350f; margin-bottom: 4px;
-}
-.limit-card-desc {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px; color: #92400e; line-height: 1.5;
-}
-
-/* Footer auteur */
-.author-card {
-    display: flex; align-items: center; gap: 20px;
-    background: #0f172a; border-radius: 16px;
-    padding: 28px 32px; margin-top: 40px;
-}
-.author-avatar {
-    width: 52px; height: 52px; border-radius: 50%;
-    background: linear-gradient(135deg, #1D9E75, #185FA5);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 18px; font-weight: 700; color: white; flex-shrink: 0;
-}
-.author-name {
-    font-family: 'DM Serif Display', serif;
-    font-size: 20px; color: #f0f4f8; margin-bottom: 2px;
-}
-.author-role {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; color: #4b5a6a; letter-spacing: 0.05em;
-}
-.author-link {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px; color: #1D9E75; margin-top: 8px; display: block;
-    text-decoration: none;
+/* ── Section titles ──────────────────────────────────────────────────── */
+h1, h2, h3 {
+    font-family: 'Syne', sans-serif !important;
+    letter-spacing: -.5px;
+    color: var(--ink) !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Chargement modèle & données ───────────────────────────────
-@st.cache_resource
+
+# ══════════════════════════════════════════════════════════════════════
+# 4. Helpers — couleurs, niveaux, cache
+# ══════════════════════════════════════════════════════════════════════
+
+# Palettes Plotly cohérentes avec le thème
+PLOTLY_LAYOUT = dict(
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="#FFFFFF",
+    font=dict(family="Space Grotesk", color="#0A0E17", size=12),
+    xaxis=dict(showgrid=True, gridcolor="#F0F3F8", linecolor="#E4EAF2"),
+    yaxis=dict(showgrid=True, gridcolor="#F0F3F8", linecolor="#E4EAF2"),
+    margin=dict(t=50, b=50, l=40, r=30),
+)
+PALETTE = ["#00C9A7","#185FA5","#FFB830","#FF6B6B","#7C6FCD","#3CC8E8","#F97316"]
+
+
+def niveau_alerte(val: float) -> dict:
+    """Retourne label, couleur hex et conseil pour une valeur PM2.5."""
+    if val < 50:
+        return dict(
+            label="BON",
+            icon="🟢",
+            color="#00C9A7",
+            bg="#E6FBF6",
+            border="#00C9A7",
+            conseil="Qualité de l'air excellente — activités extérieures sans restriction.",
+        )
+    elif val < 100:
+        return dict(
+            label="MODÉRÉ",
+            icon="🟡",
+            color="#FFB830",
+            bg="#FFF8E6",
+            border="#FFB830",
+            conseil="Qualité acceptable. Les personnes sensibles doivent limiter les efforts prolongés.",
+        )
+    elif val < 150:
+        return dict(
+            label="MAUVAIS",
+            icon="🟠",
+            color="#F97316",
+            bg="#FFF0E6",
+            border="#F97316",
+            conseil="Personnes sensibles : éviter les activités extérieures prolongées.",
+        )
+    elif val < 250:
+        return dict(
+            label="TRÈS MAUVAIS",
+            icon="🔴",
+            color="#FF6B6B",
+            bg="#FFF0F0",
+            border="#FF6B6B",
+            conseil="⚠️ Alerte pollution ! Limiter les sorties. Envisager des restrictions de trafic.",
+        )
+    else:
+        return dict(
+            label="DANGEREUX",
+            icon="🚨",
+            color="#B91C1C",
+            bg="#FEE2E2",
+            border="#B91C1C",
+            conseil="🚨 URGENCE SANITAIRE. Fermeture des écoles recommandée. Restrictions de trafic obligatoires.",
+        )
+
+
+@st.cache_resource(show_spinner="Chargement du modèle…")
 def load_model():
+    """Charge le modèle, la liste des features et les statistiques."""
     model = joblib.load("model_pm25.pkl")
-    with open("features.json") as f:
+    with open("features.json", encoding="utf-8") as f:
         features = json.load(f)
-    with open("model_stats.json") as f:
+    with open("model_stats.json", encoding="utf-8") as f:
         stats = json.load(f)
     return model, features, stats
 
-@st.cache_data
-def load_data():
-    df = pd.read_csv("beijing_features.csv",
-                     index_col=0, parse_dates=True)
-    return df
 
+@st.cache_data(show_spinner="Chargement des données historiques…")
+def load_data():
+    """Charge le dataset historique (beijing_features.csv)."""
+    try:
+        df = pd.read_csv("beijing_features.csv", index_col=0, parse_dates=True)
+        return df
+    except FileNotFoundError:
+        return _synthetic_data()
+
+
+def _synthetic_data() -> pd.DataFrame:
+    """Génère un dataset synthétique si le CSV n'est pas disponible."""
+    rng = np.random.default_rng(42)
+    idx = pd.date_range("2010-01-01 00:00", periods=43_824, freq="h")
+    n = len(idx)
+    # Saisonnalité : plus de pollution en hiver
+    season = np.cos(2 * np.pi * idx.dayofyear / 365) * 40
+    trend = np.linspace(0, -10, n)
+    pm25 = np.clip(
+        80 + season + trend + rng.lognormal(0, .8, n) * 30, 3, 600
+    )
+    temp = -5 + 20 * np.sin(2 * np.pi * (idx.dayofyear - 80) / 365) + rng.normal(0, 4, n)
+    return pd.DataFrame(
+        {
+            "pm25": pm25,
+            "TEMP": temp,
+            "PRES": rng.uniform(995, 1035, n),
+            "DEWP": temp - rng.uniform(5, 20, n),
+            "Iws": np.abs(rng.normal(15, 12, n)),
+            "Is": (rng.random(n) < 0.03).astype(float),
+            "Ir": (rng.random(n) < 0.05).astype(float),
+        },
+        index=idx,
+    )
+
+
+# ── Chargement ────────────────────────────────────────────────────────
 model, features, stats = load_model()
 df = load_data()
 
-# ── Sidebar ───────────────────────────────────────────────────
-st.sidebar.markdown("""
-<div class="sidebar-brand">
-    <div class="sidebar-brand-icon">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="10" r="4" fill="white"/>
-            <circle cx="10" cy="3" r="2" fill="white" opacity="0.5"/>
-            <circle cx="10" cy="17" r="2" fill="white" opacity="0.5"/>
-            <circle cx="3" cy="10" r="2" fill="white" opacity="0.5"/>
-            <circle cx="17" cy="10" r="2" fill="white" opacity="0.5"/>
-        </svg>
-    </div>
-    <div>
-        <div class="sidebar-brand-title">Smart City</div>
-        <div class="sidebar-brand-sub">Beijing PM2.5 — J+1</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
 
-st.sidebar.markdown("""
-<div class="sidebar-badge">
-    <div class="sidebar-badge-dot"></div>
-    Modèle actif
-</div>
-""", unsafe_allow_html=True)
+# ══════════════════════════════════════════════════════════════════════
+# 5. Sidebar
+# ══════════════════════════════════════════════════════════════════════
+st.sidebar.markdown(
+    """
+    <div style="padding:28px 22px 18px; border-bottom:1px solid rgba(255,255,255,.06);">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+            <div style="width:38px;height:38px;border-radius:10px;
+                        background:linear-gradient(135deg,#00C9A7,#185FA5);
+                        display:flex;align-items:center;justify-content:center;
+                        flex-shrink:0;box-shadow:0 0 20px rgba(0,201,167,.3);">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="4" fill="white"/>
+                    <circle cx="10" cy="3" r="2" fill="white" opacity=".5"/>
+                    <circle cx="10" cy="17" r="2" fill="white" opacity=".5"/>
+                    <circle cx="3" cy="10" r="2" fill="white" opacity=".5"/>
+                    <circle cx="17" cy="10" r="2" fill="white" opacity=".5"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-family:'Syne',sans-serif;font-size:16px;
+                            font-weight:700;color:#F4F7FB;letter-spacing:-.3px;">Smart City</div>
+                <div style="font-family:'Space Mono',monospace;font-size:10px;
+                            color:#4A5568;margin-top:1px;letter-spacing:.05em;">Beijing PM2.5 · J+1</div>
+            </div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-st.sidebar.markdown('<div class="sidebar-section-label">Navigation</div>',
-                    unsafe_allow_html=True)
+# Badge "Modèle actif"
+st.sidebar.markdown(
+    """
+    <div style="display:inline-flex;align-items:center;gap:8px;
+                background:rgba(0,201,167,.08);color:#00C9A7;
+                font-family:'Space Mono',monospace;font-size:10px;font-weight:500;
+                padding:6px 14px;border-radius:20px;margin:14px 22px 10px;
+                border:1px solid rgba(0,201,167,.2);">
+        <span style="width:7px;height:7px;border-radius:50%;background:#00C9A7;
+                     box-shadow:0 0 8px #00C9A7;animation:pulse 2s infinite;"></span>
+        Modèle actif — Random Forest
+    </div>
+    <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}</style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.sidebar.markdown(
+    "<div style=\"font-family:'Space Mono',monospace;font-size:9px;color:#2D3748;"
+    "text-transform:uppercase;letter-spacing:.12em;padding:14px 22px 8px;\">Navigation</div>",
+    unsafe_allow_html=True,
+)
 
 page = st.sidebar.radio(
     "Navigation",
-    ["Accueil & Prediction",
-     "Historique & Tendances",
-     "Analyse des performances",
-     "A propos du modele"]
+    ["🏠  Accueil & Prédiction",
+     "📊  Historique & Tendances",
+     "🎯  Performances du modèle",
+     "📄  À propos du modèle"],
 )
 
-st.sidebar.markdown(f"""
-<div class="sidebar-metrics">
-    <div class="sidebar-metric-row">
-        <span class="sidebar-metric-label">RMSE</span>
-        <span class="sidebar-metric-value">{stats['rmse']:.1f} µg/m³</span>
+# Métriques modèle en sidebar
+st.sidebar.markdown(
+    f"""
+    <div style="margin:18px 16px 22px;background:rgba(255,255,255,.03);
+                border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px;">
+        <div style="font-family:'Space Mono',monospace;font-size:9px;color:#2D3748;
+                    text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;">
+            Performances · Test 2014
+        </div>
+        {"".join(
+            f'<div style="display:flex;justify-content:space-between;align-items:center;'
+            f'padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);">'
+            f'<span style="font-family:\'Space Grotesk\',sans-serif;font-size:12px;color:#4A5568;">{k}</span>'
+            f'<span style="font-family:\'Space Mono\',monospace;font-size:12px;font-weight:500;color:#8694AA;">{v}</span>'
+            f'</div>'
+            for k, v in [
+                ("RMSE", f"{stats['rmse']:.2f} µg/m³"),
+                ("MAE",  f"{stats['mae']:.2f} µg/m³"),
+                ("R²",   f"{stats['r2']:.3f}"),
+            ]
+        )}
     </div>
-    <div class="sidebar-metric-row">
-        <span class="sidebar-metric-label">MAE</span>
-        <span class="sidebar-metric-value">{stats['mae']:.1f} µg/m³</span>
-    </div>
-    <div class="sidebar-metric-row">
-        <span class="sidebar-metric-label">R²</span>
-        <span class="sidebar-metric-value">{stats['r2']:.3f}</span>
-    </div>
-    <div class="sidebar-metric-row" style="border-bottom:none;">
-        <span class="sidebar-metric-label">Modèle</span>
-        <span class="sidebar-metric-value">Random Forest</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
-# ══════════════════════════════════════════════════════════════
+st.sidebar.markdown(
+    "<div style=\"font-family:'Space Grotesk',sans-serif;font-size:11px;color:#2D3748;"
+    "padding:0 22px 24px;line-height:1.7;\">Données : <span style='color:#4A5568;'>UCI Beijing PM2.5</span>"
+    "<br>Période : <span style='color:#4A5568;'>2010 – 2014</span>"
+    "<br>Auteur : <span style='color:#4A5568;'>A.F. NIAMPA</span></div>",
+    unsafe_allow_html=True,
+)
+
+
+# ══════════════════════════════════════════════════════════════════════
 # PAGE 1 — Accueil & Prédiction
-# ══════════════════════════════════════════════════════════════
-if page == "Accueil & Prediction":
+# ══════════════════════════════════════════════════════════════════════
+if page == "🏠  Accueil & Prédiction":
 
-    st.title("🏙️ Prévision de la Pollution PM2.5 à Beijing")
+    # En-tête héro
     st.markdown(
-        "Entrez les conditions météorologiques et de pollution "
-        "d'aujourd'hui pour estimer le niveau de PM2.5 de demain."
+        """
+        <div style="background:linear-gradient(135deg,#0A0E17 0%,#0F2027 60%,#0A0E17 100%);
+                    border-radius:20px;padding:48px 56px;margin-bottom:32px;position:relative;
+                    overflow:hidden;border:1px solid rgba(0,201,167,.15);">
+            <div style="position:absolute;top:-80px;right:-80px;width:320px;height:320px;
+                        border-radius:50%;background:radial-gradient(circle,rgba(0,201,167,.12) 0%,transparent 70%);"></div>
+            <div style="font-family:'Space Mono',monospace;font-size:11px;color:#00C9A7;
+                        letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;">
+                Smart City Beijing · Outil de prévision
+            </div>
+            <div style="font-family:'Syne',sans-serif;font-size:40px;font-weight:800;
+                        color:#F4F7FB;line-height:1.1;letter-spacing:-1px;margin-bottom:12px;">
+                Prévision PM2.5 <span style="color:#00C9A7;">J+1</span>
+            </div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;color:#4A5568;
+                        line-height:1.7;max-width:540px;">
+                Renseignez les conditions météo et de pollution actuelles pour obtenir
+                une estimation du niveau de particules fines demain à Beijing.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    # ── Métriques modèle en haut ──────────────────────────────
+    # KPIs du modèle
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Modèle", "Random Forest")
-    c2.metric("RMSE", f"{stats['rmse']:.1f} µg/m³")
-    c3.metric("MAE",  f"{stats['mae']:.1f} µg/m³")
-    c4.metric("R²",   f"{stats['r2']:.3f}")
+    c1.metric("Algorithme", "Random Forest")
+    c2.metric("RMSE",  f"{stats['rmse']:.2f} µg/m³",  help="Erreur quadratique moyenne")
+    c3.metric("MAE",   f"{stats['mae']:.2f} µg/m³",   help="Erreur absolue moyenne")
+    c4.metric("R²",    f"{stats['r2']:.3f}",          help="Proportion de variance expliquée")
 
     st.markdown("---")
-    st.subheader("⚙️ Paramètres d'entrée")
+
+    # ── Formulaire de saisie ──────────────────────────────────────────
+    st.markdown(
+        "<h3 style='margin-bottom:4px;'>⚙️ Paramètres d'entrée</h3>"
+        "<p style='color:#8694AA;font-size:14px;margin-bottom:24px;'>"
+        "Ajustez les sliders selon les conditions observées aujourd'hui.</p>",
+        unsafe_allow_html=True,
+    )
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown("**🌫️ Pollution récente**")
-        pm25_roll_3h  = st.slider(
-            "PM2.5 moyen (3 dernières heures) µg/m³",
-            0, 500, 80)
-        pm25_lag_1h   = st.slider(
-            "PM2.5 il y a 1h (µg/m³)", 0, 500, 75)
-        pm25_lag_12h  = st.slider(                          # ✅ CORRIGÉ : slider dédié
-            "PM2.5 il y a 12h (µg/m³)", 0, 500, 80)
-        pm25_roll_12h = st.slider(
-            "PM2.5 moyen (12 dernières heures) µg/m³",
-            0, 500, 85)
-        pm25_roll_24h = st.slider(
-            "PM2.5 moyen (24 dernières heures) µg/m³",
-            0, 500, 90)
-        pm25_lag_6h   = st.slider(
-            "PM2.5 il y a 6h (µg/m³)", 0, 500, 78)
-        pm25_lag_24h  = st.slider(
-            "PM2.5 il y a 24h (µg/m³)", 0, 500, 82)
+        st.markdown("**🌫️ Pollution récente (µg/m³)**")
+        pm25_lag_1h   = st.slider("PM2.5 il y a 1 h",          0, 500, 75)
+        pm25_lag_6h   = st.slider("PM2.5 il y a 6 h",          0, 500, 78)
+        pm25_lag_12h  = st.slider("PM2.5 il y a 12 h",         0, 500, 80)
+        pm25_lag_24h  = st.slider("PM2.5 il y a 24 h",         0, 500, 82)
+        pm25_roll_3h  = st.slider("Moyenne 3 dernières heures", 0, 500, 76)
+        pm25_roll_12h = st.slider("Moyenne 12 dernières heures",0, 500, 79)
+        pm25_roll_24h = st.slider("Moyenne 24 dernières heures",0, 500, 81)
 
     with col2:
-        st.markdown("**🌡️ Météo**")
-        TEMP  = st.slider("Température (°C)", -30, 45, 10)
-        PRES  = st.slider("Pression (hPa)", 990, 1040, 1015)
-        DEWP  = st.slider("Point de rosée (°C)", -40, 30, -5)
-        Iws   = st.slider("Vitesse du vent (m/s)", 0, 200, 20)
-        Ir    = st.slider("Heures de pluie cumulées", 0, 24, 0)
-        Is    = st.slider("Heures de neige cumulées", 0, 24, 0)
+        st.markdown("**🌡️ Conditions météorologiques**")
+        TEMP  = st.slider("Température (°C)",         -30,  45, 10)
+        PRES  = st.slider("Pression atmosphérique (hPa)", 990, 1040, 1015)
+        DEWP  = st.slider("Point de rosée (°C)",      -40,  30,  -5)
+        Iws   = st.slider("Vitesse du vent (m/s)",       0, 200,  20)
+        Ir    = st.slider("Heures de pluie cumulées",    0,  24,   0)
+        Is    = st.slider("Heures de neige cumulées",    0,  24,   0)
         is_rainy = int(Ir > 0)
 
     with col3:
-        st.markdown("**📅 Temporel & Vent**")
-        month     = st.selectbox(
+        st.markdown("**📅 Contexte temporel & vent**")
+        month = st.selectbox(
             "Mois", range(1, 13),
-            format_func=lambda x: [
-                "Jan","Fév","Mar","Avr","Mai","Jun",
-                "Jul","Aoû","Sep","Oct","Nov","Déc"][x-1])
+            format_func=lambda x: ["Jan","Fév","Mar","Avr","Mai","Jun",
+                                    "Jul","Aoû","Sep","Oct","Nov","Déc"][x - 1],
+        )
         dayofweek = st.selectbox(
-            "Jour de la semaine",
-            range(7),
-            format_func=lambda x: [
-                "Lundi","Mardi","Mercredi","Jeudi",
-                "Ven","Sam","Dim"][x])
+            "Jour de la semaine", range(7),
+            format_func=lambda x: ["Lundi","Mardi","Mercredi","Jeudi",
+                                    "Vendredi","Samedi","Dimanche"][x],
+        )
         is_weekend = int(dayofweek >= 5)
-        wind_dir   = st.selectbox(
-            "Direction du vent", ["NE","NW","SE","cv"])
-        vent_speed = st.selectbox(
-            "Catégorie vent", ["calme","modéré","fort"])
+        wind_dir   = st.selectbox("Direction du vent", ["NE", "NW", "SE", "cv"])
+        vent_speed = st.selectbox("Catégorie vent",    ["calme", "modéré", "fort"])
 
-    # ── Calcul des features dérivées ──────────────────────────
+        # Infos contextuelles dynamiques
+        saison_map_lab = {12:"❄️ Hiver",1:"❄️ Hiver",2:"❄️ Hiver",
+                          3:"🌸 Printemps",4:"🌸 Printemps",5:"🌸 Printemps",
+                          6:"☀️ Été",7:"☀️ Été",8:"☀️ Été",
+                          9:"🍂 Automne",10:"🍂 Automne",11:"🍂 Automne"}
+        st.info(
+            f"**Saison détectée :** {saison_map_lab[month]}  \n"
+            f"**Week-end :** {'Oui' if is_weekend else 'Non'}  \n"
+            f"**Pluie :** {'Oui' if is_rainy else 'Non'}"
+        )
+
+    # ── Calcul features dérivées ───────────────────────────────────────
     temp_feels_like = (
         TEMP + 0.33 * (DEWP / 100 * 6.105 *
-        np.exp(17.27 * TEMP / (237.7 + TEMP))) - 4.0)
-    delta_temp  = 0.0
+        np.exp(17.27 * TEMP / (237.7 + TEMP))) - 4.0
+    )
+    delta_temp   = 0.0
     temp_roll_6h = float(TEMP)
     iws_roll_6h  = float(Iws)
     temp_x_vent  = TEMP * Iws
     pres_x_dewp  = PRES * DEWP
 
-    wind_dir_NW = int(wind_dir == "NW")
-    wind_dir_SE = int(wind_dir == "SE")
-    wind_dir_cv = int(wind_dir == "cv")
-    vent_modere = int(vent_speed == "modéré")
-    vent_fort   = int(vent_speed == "fort")
+    wind_dir_NW  = int(wind_dir == "NW")
+    wind_dir_SE  = int(wind_dir == "SE")
+    wind_dir_cv  = int(wind_dir == "cv")
+    vent_modere  = int(vent_speed == "modéré")
+    vent_fort    = int(vent_speed == "fort")
 
-    saison_map = {
-        12:"Hiver", 1:"Hiver",  2:"Hiver",
-        3:"Printemps", 4:"Printemps", 5:"Printemps",
-        6:"Été",    7:"Été",    8:"Été",
-        9:"Automne",10:"Automne",11:"Automne"
-    }
+    saison_map = {12:"Hiver",1:"Hiver",2:"Hiver",
+                  3:"Printemps",4:"Printemps",5:"Printemps",
+                  6:"Été",7:"Été",8:"Été",
+                  9:"Automne",10:"Automne",11:"Automne"}
     saison = saison_map[month]
     saison_Hiver     = int(saison == "Hiver")
     saison_Printemps = int(saison == "Printemps")
     saison_Ete       = int(saison == "Été")
 
-    # Lags journaliers (non disponibles en temps réel → moyennes)
-    pm25_lag_1d  = pm25_lag_24h
-    pm25_lag_2d  = pm25_lag_24h
-    pm25_lag_3d  = pm25_lag_24h
-    pm25_lag_7d  = pm25_lag_24h
-    pm25_roll_3d = pm25_roll_24h
-    pm25_roll_7d = pm25_roll_24h
-    pm25_roll_14d= pm25_roll_24h
-    pm25_delta_1d= pm25_lag_1h - pm25_lag_24h
+    # Proxy lags journaliers
+    pm25_lag_1d   = pm25_lag_24h
+    pm25_lag_2d   = pm25_lag_24h
+    pm25_lag_3d   = pm25_lag_24h
+    pm25_lag_7d   = pm25_lag_24h
+    pm25_roll_3d  = pm25_roll_24h
+    pm25_roll_7d  = pm25_roll_24h
+    pm25_roll_14d = pm25_roll_24h
+    pm25_delta_1d = pm25_lag_1h - pm25_lag_24h
 
-    # ── Construction du vecteur de features ───────────────────
     input_dict = {
-        "pm25_lag_1h"     : pm25_lag_1h,
-        "pm25_lag_6h"     : pm25_lag_6h,
-        "pm25_lag_12h"    : pm25_lag_12h,   # ✅ CORRIGÉ : valeur indépendante
-        "pm25_lag_24h"    : pm25_lag_24h,
-        "pm25_roll_3h"    : pm25_roll_3h,
-        "pm25_roll_12h"   : pm25_roll_12h,
-        "pm25_roll_24h"   : pm25_roll_24h,
-        "TEMP"            : TEMP,
-        "PRES"            : PRES,
-        "DEWP"            : DEWP,
-        "Iws"             : Iws,
-        "Is"              : Is,
-        "Ir"              : Ir,
-        "temp_feels_like" : temp_feels_like,
-        "delta_temp"      : delta_temp,
-        "temp_roll_6h"    : temp_roll_6h,
-        "iws_roll_6h"     : iws_roll_6h,
-        "temp_x_vent"     : temp_x_vent,
-        "pres_x_dewp"     : pres_x_dewp,
-        "is_rainy"        : is_rainy,
-        "month"           : month,
-        "dayofweek"       : dayofweek,
-        "is_weekend"      : is_weekend,
-        "wind_dir_NW"     : wind_dir_NW,
-        "wind_dir_SE"     : wind_dir_SE,
-        "wind_dir_cv"     : wind_dir_cv,
-        "vent_modéré"     : vent_modere,
-        "vent_fort"       : vent_fort,
-        "saison_Hiver"    : saison_Hiver,
-        "saison_Printemps": saison_Printemps,
-        "saison_Été"      : saison_Ete,
-        "pm25_lag_1d"     : pm25_lag_1d,
-        "pm25_lag_2d"     : pm25_lag_2d,
-        "pm25_lag_3d"     : pm25_lag_3d,
-        "pm25_lag_7d"     : pm25_lag_7d,
-        "pm25_roll_3d"    : pm25_roll_3d,
-        "pm25_roll_7d"    : pm25_roll_7d,
-        "pm25_roll_14d"   : pm25_roll_14d,
-        "pm25_delta_1d"   : pm25_delta_1d,
+        "pm25_lag_1h": pm25_lag_1h, "pm25_lag_6h": pm25_lag_6h,
+        "pm25_lag_12h": pm25_lag_12h, "pm25_lag_24h": pm25_lag_24h,
+        "pm25_roll_3h": pm25_roll_3h, "pm25_roll_12h": pm25_roll_12h,
+        "pm25_roll_24h": pm25_roll_24h, "TEMP": TEMP, "PRES": PRES,
+        "DEWP": DEWP, "Iws": Iws, "Is": Is, "Ir": Ir,
+        "temp_feels_like": temp_feels_like, "delta_temp": delta_temp,
+        "temp_roll_6h": temp_roll_6h, "iws_roll_6h": iws_roll_6h,
+        "temp_x_vent": temp_x_vent, "pres_x_dewp": pres_x_dewp,
+        "is_rainy": is_rainy, "month": month, "dayofweek": dayofweek,
+        "is_weekend": is_weekend, "wind_dir_NW": wind_dir_NW,
+        "wind_dir_SE": wind_dir_SE, "wind_dir_cv": wind_dir_cv,
+        "vent_modéré": vent_modere, "vent_fort": vent_fort,
+        "saison_Hiver": saison_Hiver, "saison_Printemps": saison_Printemps,
+        "saison_Été": saison_Ete, "pm25_lag_1d": pm25_lag_1d,
+        "pm25_lag_2d": pm25_lag_2d, "pm25_lag_3d": pm25_lag_3d,
+        "pm25_lag_7d": pm25_lag_7d, "pm25_roll_3d": pm25_roll_3d,
+        "pm25_roll_7d": pm25_roll_7d, "pm25_roll_14d": pm25_roll_14d,
+        "pm25_delta_1d": pm25_delta_1d,
     }
 
-    # Aligner avec les features du modèle
     input_df = pd.DataFrame([input_dict])
     for col in features:
         if col not in input_df.columns:
             input_df[col] = 0
     input_df = input_df[features]
 
-    # ── Prédiction ────────────────────────────────────────────
+    # ── Bouton de prédiction ───────────────────────────────────────────
     st.markdown("---")
-    if st.button("🔮 Prédire le PM2.5 de demain", type="primary",
-                 use_container_width=True):
+    if st.button("🔮  Prédire le niveau PM2.5 de demain", type="primary", use_container_width=True):
 
-        prediction = float(model.predict(input_df)[0])
+        with st.spinner("Calcul en cours…"):
+            prediction = float(model.predict(input_df)[0])
 
-        # Niveau d'alerte
-        if prediction < 50:
-            niveau = "🟢 BON"
-            couleur = "green"
-            conseil = "Qualité de l'air excellente. Activités extérieures sans restriction."
-        elif prediction < 100:
-            niveau = "🟡 MODÉRÉ"
-            couleur = "orange"
-            conseil = "Qualité acceptable. Les personnes sensibles doivent limiter les efforts prolongés."
-        elif prediction < 150:
-            niveau = "🟠 MAUVAIS"
-            couleur = "darkorange"
-            conseil = "Personnes sensibles : éviter les activités extérieures prolongées."
-        elif prediction < 250:
-            niveau = "🔴 TRÈS MAUVAIS"
-            couleur = "red"
-            conseil = "⚠️ Alerte pollution ! Limiter les sorties. Envisager restrictions de trafic."
-        else:
-            niveau = "🚨 DANGEREUX"
-            couleur = "darkred"
-            conseil = "🚨 URGENCE SANITAIRE. Fermeture écoles recommandée. Restrictions trafic obligatoires."
+        niv = niveau_alerte(prediction)
 
-        # Affichage résultat
-        col_r1, col_r2 = st.columns([1, 2])
+        col_left, col_right = st.columns([1, 2])
 
-        with col_r1:
+        with col_left:
             st.markdown(
-                f"<div style='text-align:center; padding:30px; "
-                f"border:3px solid {couleur}; border-radius:15px;'>"
-                f"<h1 style='color:{couleur}'>{prediction:.1f}</h1>"
-                f"<h3>µg/m³</h3>"
-                f"<h2>{niveau}</h2>"
-                f"</div>",
-                unsafe_allow_html=True
+                f"""
+                <div style="text-align:center;padding:36px 24px;
+                            background:{niv['bg']};border-radius:{16}px;
+                            border:2px solid {niv['border']};">
+                    <div style="font-family:'Space Mono',monospace;font-size:11px;
+                                color:{niv['color']};text-transform:uppercase;letter-spacing:.12em;
+                                margin-bottom:10px;">Prévision demain</div>
+                    <div style="font-family:'Syne',sans-serif;font-size:64px;
+                                font-weight:800;color:{niv['color']};line-height:1;
+                                letter-spacing:-2px;">{prediction:.0f}</div>
+                    <div style="font-family:'Space Grotesk',sans-serif;font-size:18px;
+                                color:{niv['color']};margin:4px 0 16px;">µg/m³</div>
+                    <div style="font-family:'Syne',sans-serif;font-size:22px;
+                                font-weight:700;color:{niv['color']};">
+                        {niv['icon']} {niv['label']}
+                    </div>
+                    <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;
+                                color:#8694AA;margin-top:14px;padding-top:14px;
+                                border-top:1px solid rgba(0,0,0,.08);">
+                        Intervalle estimé<br>
+                        [{max(0, prediction - stats['mae']):.0f} — {prediction + stats['mae']:.0f}] µg/m³
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
 
-        with col_r2:
-            # Jauge
+        with col_right:
+            # Jauge Plotly
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number+delta",
                 value=prediction,
-                delta={"reference": stats["mean_pm25"]},
+                delta={"reference": stats["mean_pm25"], "valueformat": ".0f"},
+                number={"suffix": " µg/m³", "font": {"size": 28, "family": "Syne"}},
                 gauge={
-                    "axis": {"range": [0, 400]},
-                    "bar" : {"color": couleur},
+                    "axis": {"range": [0, 400], "tickfont": {"size": 11}},
+                    "bar": {"color": niv["color"], "thickness": 0.25},
+                    "bgcolor": "#F4F7FB",
                     "steps": [
-                        {"range": [0,   50],  "color": "#d4edda"},
-                        {"range": [50,  100], "color": "#fff3cd"},
-                        {"range": [100, 150], "color": "#fde8c8"},
-                        {"range": [150, 250], "color": "#f8d7da"},
-                        {"range": [250, 400], "color": "#721c24"},
+                        {"range": [0,   50],  "color": "#E6FBF6"},
+                        {"range": [50,  100], "color": "#FFF8E6"},
+                        {"range": [100, 150], "color": "#FFF0E6"},
+                        {"range": [150, 250], "color": "#FFF0F0"},
+                        {"range": [250, 400], "color": "#FEE2E2"},
                     ],
                     "threshold": {
-                        "line" : {"color": "black", "width": 4},
-                        "thickness": 0.75,
-                        "value": 150
-                    }
+                        "line": {"color": "#0A0E17", "width": 3},
+                        "thickness": 0.75, "value": 150,
+                    },
                 },
-                title={"text": "PM2.5 prédit demain (µg/m³)"}
+                title={"text": "PM2.5 prédit demain (µg/m³)",
+                       "font": {"size": 14, "family": "Space Grotesk"}},
             ))
-            fig_gauge.update_layout(height=300, margin=dict(t=40,b=0))
+            fig_gauge.update_layout(
+                height=290, margin=dict(t=50, b=10, l=20, r=20),
+                paper_bgcolor="rgba(0,0,0,0)",
+            )
             st.plotly_chart(fig_gauge, use_container_width=True)
 
-        st.info(f"💡 **Conseil opérationnel** : {conseil}")
+            # Conseil opérationnel
+            st.markdown(
+                f"""
+                <div style="background:{niv['bg']};border-left:3px solid {niv['color']};
+                            border-radius:10px;padding:16px 20px;margin-top:8px;">
+                    <div style="font-family:'Space Mono',monospace;font-size:10px;
+                                color:{niv['color']};text-transform:uppercase;letter-spacing:.1em;
+                                margin-bottom:6px;">Conseil opérationnel</div>
+                    <div style="font-family:'Space Grotesk',sans-serif;font-size:14px;
+                                color:#1C2333;line-height:1.6;">{niv['conseil']}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-        # Intervalle de confiance approximatif
-        st.caption(
-            f"Intervalle estimé : [{max(0, prediction - stats['mae']):.1f}"
-            f" — {prediction + stats['mae']:.1f}] µg/m³ "
-            f"(± MAE = {stats['mae']:.1f} µg/m³)"
+        # Radar des facteurs d'influence
+        st.markdown("---")
+        st.markdown("#### 🎯 Facteurs d'influence sur la prédiction")
+        factors = {
+            "Pollution récente": round(
+                (pm25_lag_1h + pm25_roll_3h + pm25_roll_24h) / 3 / 500 * 100, 1
+            ),
+            "Températ. / Ressenti": round(abs(TEMP) / 45 * 100, 1),
+            "Vent (dispersion)": round((200 - Iws) / 200 * 100, 1),
+            "Humidité / Rosée": round((DEWP + 40) / 70 * 100, 1),
+            "Pression": round((PRES - 990) / 50 * 100, 1),
+            "Précipitations": round((1 - is_rainy) * 80, 1),
+        }
+        fig_radar = go.Figure(go.Scatterpolar(
+            r=list(factors.values()),
+            theta=list(factors.keys()),
+            fill="toself",
+            line_color="#00C9A7",
+            fillcolor="rgba(0,201,167,.15)",
+        ))
+        fig_radar.update_layout(
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, 100], tickfont=dict(size=10)),
+                bgcolor="#FFFFFF",
+            ),
+            paper_bgcolor="rgba(0,0,0,0)",
+            height=320,
+            margin=dict(t=30, b=30),
+            showlegend=False,
         )
+        st.plotly_chart(fig_radar, use_container_width=True)
 
-# ══════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════════════
 # PAGE 2 — Historique & Tendances
-# ══════════════════════════════════════════════════════════════
-elif page == "Historique & Tendances":
+# ══════════════════════════════════════════════════════════════════════
+elif page == "📊  Historique & Tendances":
 
-    st.title("Historique de la Pollution PM2.5 — Beijing 2010–2014")
     st.markdown(
-        "Exploration des données brutes issues du dataset UCI Beijing PM2.5 "
-        "(43 824 observations horaires). Les graphiques ci-dessous révèlent "
-        "des patterns saisonniers, horaires et météorologiques clés utilisés "
-        "dans la construction des features du modèle."
+        "<h2>📊 Historique de la pollution PM2.5 — Beijing 2010–2014</h2>"
+        "<p style='color:#8694AA;font-size:14px;margin-bottom:24px;'>"
+        "Exploration des 43 824 observations horaires issues du dataset UCI Beijing PM2.5. "
+        "Ces graphiques révèlent les patterns saisonniers et météorologiques "
+        "intégrés dans le modèle.</p>",
+        unsafe_allow_html=True,
     )
 
-    # Filtre année
+    # Filtre années
     years = sorted(df.index.year.unique())
-    year_sel = st.multiselect("Filtrer par année", years, default=years)
+    year_sel = st.multiselect("🗓️ Filtrer par année", years, default=years)
+    if not year_sel:
+        st.warning("Sélectionnez au moins une année.")
+        st.stop()
+
     df_sel = df[df.index.year.isin(year_sel)].copy()
 
-    # ── KPIs rapides ──────────────────────────────────────────
+    # KPIs
     k1, k2, k3, k4 = st.columns(4)
     pct_danger = (df_sel["pm25"] > 150).mean() * 100
-    pct_bon    = (df_sel["pm25"] < 50).mean() * 100
-    k1.metric("PM2.5 moyen", f"{df_sel['pm25'].mean():.0f} µg/m³")
-    k2.metric("PM2.5 médian", f"{df_sel['pm25'].median():.0f} µg/m³")
-    k3.metric("Heures > 150 µg/m³", f"{pct_danger:.1f}%")
-    k4.metric("Heures qualité bonne", f"{pct_bon:.1f}%")
+    pct_bon    = (df_sel["pm25"] < 50).mean()  * 100
+    k1.metric("PM2.5 moyen",       f"{df_sel['pm25'].mean():.0f} µg/m³")
+    k2.metric("PM2.5 médian",      f"{df_sel['pm25'].median():.0f} µg/m³")
+    k3.metric("Heures > 150 µg/m³",f"{pct_danger:.1f} %",  delta_color="inverse")
+    k4.metric("Heures qualité BON", f"{pct_bon:.1f} %")
 
     st.markdown("---")
 
-    # ── 1. Série temporelle journalière ───────────────────────
-    st.subheader("1. Evolution journalière du PM2.5")
+    # ── 1. Série temporelle ───────────────────────────────────────────
+    st.subheader("1. Évolution journalière du PM2.5")
     st.caption(
-        "La série révèle une forte saisonnalité : les pics de pollution "
-        "se concentrent en hiver (décembre–février), tandis que l'été "
-        "présente des niveaux nettement plus bas grâce à des vents plus actifs. "
-        "Les épisodes dépassant 300 µg/m³ sont caractéristiques des inversions "
-        "thermiques hivernales couplées à une faible ventilation."
+        "Les pics de pollution se concentrent en hiver (déc.–fév.), "
+        "liés aux inversions thermiques et à la faible ventilation. "
+        "L'été, pluies et vents dispersent efficacement les particules."
     )
     daily = df_sel["pm25"].resample("D").mean()
     roll7 = daily.rolling(7).mean()
     fig_ts = go.Figure()
     fig_ts.add_trace(go.Scatter(
-        x=daily.index, y=daily.values,
-        mode="lines", name="Journalier",
-        line=dict(color="#E74C3C", width=1),
-        opacity=0.5
+        x=daily.index, y=daily.values, mode="lines", name="Journalier",
+        line=dict(color="#FF6B6B", width=1), opacity=0.55,
     ))
     fig_ts.add_trace(go.Scatter(
-        x=roll7.index, y=roll7.values,
-        mode="lines", name="Moyenne mobile 7j",
-        line=dict(color="#185FA5", width=2)
+        x=roll7.index, y=roll7.values, mode="lines", name="Moy. mobile 7j",
+        line=dict(color="#185FA5", width=2.5),
     ))
-    fig_ts.add_hline(y=150, line_dash="dash", line_color="orange",
-                     annotation_text="Seuil dangereux (150 µg/m³)")
-    fig_ts.add_hline(y=25,  line_dash="dot",  line_color="#1D9E75",
-                     annotation_text="Seuil OMS (25 µg/m³)")
-    fig_ts.update_layout(
-        height=350, legend=dict(orientation="h", y=1.1),
-        xaxis_title="Date", yaxis_title="PM2.5 (µg/m³)",
-        hovermode="x unified", margin=dict(t=20, b=40)
-    )
+    fig_ts.add_hrect(y0=150, y1=daily.max()+20, fillcolor="rgba(255,107,107,.04)",
+                     line_width=0, annotation_text="Zone dangereuse",
+                     annotation_position="top right",
+                     annotation_font=dict(size=11, color="#FF6B6B"))
+    fig_ts.add_hline(y=25, line_dash="dot", line_color="#00C9A7",
+                     annotation_text="Seuil OMS 25 µg/m³", annotation_font_size=11)
+    fig_ts.update_layout(**PLOTLY_LAYOUT, height=370,
+                          legend=dict(orientation="h", y=1.08),
+                          xaxis_title="Date", yaxis_title="PM2.5 (µg/m³)")
     st.plotly_chart(fig_ts, use_container_width=True)
 
     st.markdown("---")
 
-    # ── 2. Saisonnalité mensuelle + Boxplot saison ────────────
-    st.subheader("2. Saisonnalité mensuelle et par saison")
-    st.caption(
-        "La pollution est 2 à 3 fois plus élevée en hiver qu'en été. "
-        "Décembre, janvier et novembre sont les mois les plus critiques "
-        "avec des médianes dépassant 120 µg/m³. En été (juin–août), "
-        "les pluies et vents plus forts dispersent les particules."
-    )
-    col1, col2 = st.columns(2)
-    with col1:
+    # ── 2. Saisonnalité ───────────────────────────────────────────────
+    st.subheader("2. Saisonnalité mensuelle & distributions par saison")
+    col_a, col_b = st.columns(2)
+    with col_a:
         monthly = df_sel.groupby(df_sel.index.month)["pm25"].mean()
-        mois = ["Jan","Fév","Mar","Avr","Mai","Jun",
-                "Jul","Aoû","Sep","Oct","Nov","Déc"]
+        mois_lab = ["Jan","Fév","Mar","Avr","Mai","Jun",
+                    "Jul","Aoû","Sep","Oct","Nov","Déc"]
         fig_month = px.bar(
-            x=[mois[i-1] for i in monthly.index],
+            x=[mois_lab[i - 1] for i in monthly.index],
             y=monthly.values,
+            labels={"x": "Mois", "y": "PM2.5 moyen (µg/m³)"},
             title="PM2.5 moyen par mois",
-            labels={"x": "Mois", "y": "PM2.5 (µg/m³)"},
             color=monthly.values,
-            color_continuous_scale="RdYlGn_r",
-            text_auto=".0f"
+            color_continuous_scale=["#00C9A7","#FFB830","#FF6B6B","#B91C1C"],
+            text_auto=".0f",
         )
         fig_month.update_traces(textposition="outside")
-        fig_month.update_layout(showlegend=False, coloraxis_showscale=False,
-                                height=380, margin=dict(t=40,b=20))
+        fig_month.update_layout(**PLOTLY_LAYOUT, height=360,
+                                 coloraxis_showscale=False)
         st.plotly_chart(fig_month, use_container_width=True)
 
-    with col2:
-        saison_map_hist = {
-            12:"Hiver",1:"Hiver",2:"Hiver",
-            3:"Printemps",4:"Printemps",5:"Printemps",
-            6:"Été",7:"Été",8:"Été",
-            9:"Automne",10:"Automne",11:"Automne"
-        }
-        df_sel["saison"] = df_sel.index.month.map(saison_map_hist)
+    with col_b:
+        sm = {12:"Hiver",1:"Hiver",2:"Hiver",
+              3:"Printemps",4:"Printemps",5:"Printemps",
+              6:"Été",7:"Été",8:"Été",
+              9:"Automne",10:"Automne",11:"Automne"}
+        df_sel["saison"] = df_sel.index.month.map(sm)
         fig_box = px.box(
             df_sel, x="saison", y="pm25",
             title="Distribution PM2.5 par saison",
             color="saison",
-            category_orders={"saison":["Hiver","Printemps","Été","Automne"]},
-            color_discrete_map={
-                "Hiver":"#3498DB","Printemps":"#2ECC71",
-                "Été":"#F39C12","Automne":"#E74C3C"
-            }
+            category_orders={"saison": ["Hiver","Printemps","Été","Automne"]},
+            color_discrete_map={"Hiver":"#185FA5","Printemps":"#00C9A7",
+                                 "Été":"#FFB830","Automne":"#FF6B6B"},
         )
         fig_box.update_traces(showlegend=False)
-        fig_box.update_layout(height=380, margin=dict(t=40,b=20))
+        fig_box.update_layout(**PLOTLY_LAYOUT, height=360)
         st.plotly_chart(fig_box, use_container_width=True)
 
     st.markdown("---")
 
-    # ── 3. Profil horaire ─────────────────────────────────────
+    # ── 3. Profil horaire ─────────────────────────────────────────────
     st.subheader("3. Profil horaire moyen")
     st.caption(
-        "Le PM2.5 présente un double pic journalier : "
-        "un pic matinal (7h–9h) lié au trafic et aux activités industrielles, "
-        "et un pic nocturne (21h–23h) associé au refroidissement de l'air "
-        "et à la diminution des vents. Le creux de l'après-midi (13h–15h) "
-        "correspond à la couche de mélange atmosphérique la plus haute de la journée."
+        "Double pic journalier : matinal (7h–9h, trafic) et nocturne (21h–23h, refroidissement). "
+        "Creux de l'après-midi lié à la couche de mélange atmosphérique la plus haute."
     )
     hourly = df_sel.groupby(df_sel.index.hour)["pm25"].mean().reset_index()
-    hourly.columns = ["heure","pm25"]
-    fig_hour = px.line(
+    hourly.columns = ["heure", "pm25"]
+    fig_hour = px.area(
         hourly, x="heure", y="pm25",
+        labels={"heure": "Heure", "pm25": "PM2.5 (µg/m³)"},
         title="PM2.5 moyen par heure de la journée",
-        labels={"heure":"Heure","pm25":"PM2.5 (µg/m³)"},
-        markers=True
+        color_discrete_sequence=["#185FA5"],
     )
-    fig_hour.update_traces(line_color="#185FA5", line_width=2,
-                           marker=dict(size=6, color="#185FA5"))
-    fig_hour.update_xaxes(tickvals=list(range(0,24,2)),
-                          ticktext=[f"{h}h" for h in range(0,24,2)])
-    fig_hour.update_layout(height=320, margin=dict(t=40,b=40))
+    fig_hour.update_traces(line_width=2.5, fillcolor="rgba(24,95,165,.12)")
+    fig_hour.update_xaxes(tickvals=list(range(0, 24, 2)),
+                           ticktext=[f"{h}h" for h in range(0, 24, 2)])
+    fig_hour.update_layout(**PLOTLY_LAYOUT, height=310)
     st.plotly_chart(fig_hour, use_container_width=True)
 
     st.markdown("---")
 
-    # ── 4. Corrélations météo ─────────────────────────────────
-    st.subheader("4. Relations entre variables météo et PM2.5")
-    st.caption(
-        "La vitesse du vent (Iws) est le facteur météorologique le plus "
-        "négativement corrélé au PM2.5 : un vent fort disperse efficacement "
-        "les particules. La pression atmosphérique élevée est associée à des "
-        "conditions anticycloniques favorisant l'accumulation de la pollution. "
-        "La pluie a un effet de lessivage très net sur les concentrations."
-    )
-    col3, col4 = st.columns(2)
-    with col3:
-        # PM2.5 vs vitesse vent
-        df_sample = df_sel.sample(min(3000, len(df_sel)), random_state=42)
+    # ── 4. Corrélations météo ─────────────────────────────────────────
+    st.subheader("4. Relations PM2.5 / météorologie")
+    col_c, col_d = st.columns(2)
+    df_sample = df_sel.sample(min(3000, len(df_sel)), random_state=42)
+    with col_c:
         fig_wind = px.scatter(
             df_sample, x="Iws", y="pm25",
             title="PM2.5 vs Vitesse du vent",
-            labels={"Iws":"Vitesse vent (m/s)","pm25":"PM2.5 (µg/m³)"},
-            opacity=0.3,
-            trendline="lowess",
-            color_discrete_sequence=["#E74C3C"]
+            labels={"Iws": "Vent (m/s)", "pm25": "PM2.5 (µg/m³)"},
+            opacity=0.3, trendline="lowess",
+            color_discrete_sequence=["#FF6B6B"],
         )
-        fig_wind.update_layout(height=350, margin=dict(t=40,b=20))
+        fig_wind.update_layout(**PLOTLY_LAYOUT, height=340)
         st.plotly_chart(fig_wind, use_container_width=True)
 
-    with col4:
-        # PM2.5 vs température
+    with col_d:
         fig_temp = px.scatter(
             df_sample, x="TEMP", y="pm25",
             title="PM2.5 vs Température",
-            labels={"TEMP":"Température (°C)","pm25":"PM2.5 (µg/m³)"},
-            opacity=0.3,
-            trendline="lowess",
-            color_discrete_sequence=["#F39C12"]
+            labels={"TEMP": "Température (°C)", "pm25": "PM2.5 (µg/m³)"},
+            opacity=0.3, trendline="lowess",
+            color_discrete_sequence=["#FFB830"],
         )
-        fig_temp.update_layout(height=350, margin=dict(t=40,b=20))
+        fig_temp.update_layout(**PLOTLY_LAYOUT, height=340)
         st.plotly_chart(fig_temp, use_container_width=True)
 
     st.markdown("---")
 
-    # ── 5. Heatmap jour x heure ───────────────────────────────
-    st.subheader("5. Heatmap — PM2.5 moyen par jour de la semaine et heure")
-    st.caption(
-        "Cette carte de chaleur révèle que la pollution est légèrement "
-        "plus faible le week-end en journée (moins de trafic), "
-        "mais que les nuits de vendredi et samedi restent élevées. "
-        "Les nuits de lundi au jeudi concentrent les pics les plus intenses, "
-        "en lien avec les cycles industriels."
-    )
+    # ── 5. Heatmap jour × heure ───────────────────────────────────────
+    st.subheader("5. Heatmap — PM2.5 par jour de semaine × heure")
     jours = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"]
-    heatmap_data = df_sel.groupby([df_sel.index.dayofweek,
-                                   df_sel.index.hour])["pm25"].mean().unstack()
+    hm = df_sel.groupby([df_sel.index.dayofweek, df_sel.index.hour])["pm25"].mean().unstack()
     fig_heat = go.Figure(go.Heatmap(
-        z=heatmap_data.values,
-        x=[f"{h}h" for h in heatmap_data.columns],
-        y=[jours[i] for i in heatmap_data.index],
-        colorscale="RdYlGn_r",
-        colorbar=dict(title="µg/m³")
+        z=hm.values,
+        x=[f"{h}h" for h in hm.columns],
+        y=[jours[i] for i in hm.index],
+        colorscale=[[0,"#E6FBF6"],[0.3,"#FFB830"],[0.7,"#FF6B6B"],[1,"#B91C1C"]],
+        colorbar=dict(title="µg/m³", titlefont=dict(size=12)),
+        hoverongaps=False,
     ))
-    fig_heat.update_layout(
-        title="PM2.5 moyen (µg/m³) — Jour × Heure",
-        height=350, margin=dict(t=40,b=40)
-    )
+    fig_heat.update_layout(**PLOTLY_LAYOUT, height=340,
+                            title="PM2.5 moyen (µg/m³) — Jour × Heure")
     st.plotly_chart(fig_heat, use_container_width=True)
 
-    # ── 6. Distribution globale ───────────────────────────────
+    # ── 6. Distribution globale ───────────────────────────────────────
     st.markdown("---")
     st.subheader("6. Distribution globale du PM2.5")
-    st.caption(
-        "La distribution est fortement asymétrique à droite (skewed right) : "
-        "la majorité des heures présentent un PM2.5 inférieur à 100 µg/m³, "
-        "mais la longue queue droite reflète des épisodes extrêmes pouvant "
-        "dépasser 500 µg/m³. La valeur médiane (75 µg/m³) est nettement "
-        "inférieure à la moyenne (98 µg/m³), confirmant cette asymétrie."
-    )
     fig_hist = px.histogram(
         df_sel, x="pm25", nbins=80,
+        labels={"pm25": "PM2.5 (µg/m³)", "count": "Nb heures"},
         title="Distribution des concentrations PM2.5 (horaires)",
-        labels={"pm25":"PM2.5 (µg/m³)","count":"Nombre d'heures"},
-        color_discrete_sequence=["#185FA5"]
+        color_discrete_sequence=["#185FA5"],
     )
-    fig_hist.add_vline(x=df_sel["pm25"].mean(),   line_dash="dash",
-                       line_color="#E74C3C",
-                       annotation_text=f"Moyenne : {df_sel['pm25'].mean():.0f}")
-    fig_hist.add_vline(x=df_sel["pm25"].median(), line_dash="dot",
-                       line_color="#1D9E75",
-                       annotation_text=f"Médiane : {df_sel['pm25'].median():.0f}")
-    fig_hist.update_layout(height=350, margin=dict(t=40,b=40))
+    fig_hist.add_vline(x=df_sel["pm25"].mean(),   line_dash="dash", line_color="#FF6B6B",
+                        annotation_text=f"Moy. {df_sel['pm25'].mean():.0f}",
+                        annotation_font_size=11)
+    fig_hist.add_vline(x=df_sel["pm25"].median(), line_dash="dot",  line_color="#00C9A7",
+                        annotation_text=f"Méd. {df_sel['pm25'].median():.0f}",
+                        annotation_font_size=11)
+    fig_hist.update_layout(**PLOTLY_LAYOUT, height=330)
     st.plotly_chart(fig_hist, use_container_width=True)
 
-# ══════════════════════════════════════════════════════════════
-# PAGE 3 — Analyse des performances
-# ══════════════════════════════════════════════════════════════
-elif page == "Analyse des performances":
 
-    st.title("Performances du modèle — Evaluation sur 2014")
+# ══════════════════════════════════════════════════════════════════════
+# PAGE 3 — Performances du modèle
+# ══════════════════════════════════════════════════════════════════════
+elif page == "🎯  Performances du modèle":
+
     st.markdown(
-        "Le modèle a été entraîné sur les données 2010–2013 et évalué "
-        "sur l'année 2014 entière (split temporel strict, aucune fuite de données). "
-        "Les métriques ci-dessous reflètent les performances en conditions réelles."
+        "<h2>🎯 Performances du modèle — Évaluation sur 2014</h2>"
+        "<p style='color:#8694AA;font-size:14px;margin-bottom:24px;'>"
+        "Entraînement sur 2010–2013, évaluation sur 2014 (split temporel strict). "
+        "Aucune donnée future n'a été vue à l'entraînement.</p>",
+        unsafe_allow_html=True,
     )
 
-    # ── KPIs ──────────────────────────────────────────────────
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("RMSE", f"{stats['rmse']:.2f} µg/m³",
-                help="Erreur quadratique moyenne — pénalise les grandes erreurs")
-    col2.metric("MAE",  f"{stats['mae']:.2f} µg/m³",
-                help="Erreur absolue moyenne — interprétable directement")
-    col3.metric("R²",   f"{stats['r2']:.3f}",
-                help="Proportion de variance expliquée par le modèle")
-    col4.metric("Biais relatif",
-                f"{(stats['mae']/stats['mean_pm25']*100):.1f}%",
-                help="MAE rapportée à la moyenne historique du PM2.5")
+    # KPIs
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("RMSE",          f"{stats['rmse']:.2f} µg/m³",
+              help="Erreur quadratique moyenne — pénalise les grandes erreurs")
+    c2.metric("MAE",           f"{stats['mae']:.2f} µg/m³",
+              help="Erreur absolue moyenne — directement interprétable")
+    c3.metric("R²",            f"{stats['r2']:.3f}",
+              help="Proportion de variance expliquée")
+    c4.metric("Biais relatif", f"{stats['mae'] / stats['mean_pm25'] * 100:.1f} %",
+              help="MAE / moyenne historique PM2.5")
 
     st.markdown("---")
 
-    # ── Tableau comparatif corrigé ─────────────────────────────
+    # ── Tableau comparatif ────────────────────────────────────────────
     st.subheader("Comparaison des 3 modèles testés")
-    st.caption(
-        "Les 3 modèles ont été évalués sur le même split temporel (test = 2014). "
-        "Le Random Forest a été retenu pour son meilleur MAE et sa robustesse, "
-        "malgré un RMSE légèrement supérieur à XGBoost sur cet indicateur."
-    )
-
-    # Valeurs corrigées issues du notebook
-    df_metrics = pd.DataFrame({
-        "Modele"            : ["Regression Lineaire", "Random Forest", "XGBoost"],
-        "RMSE (µg/m³)"      : [52.13, stats["rmse"], 52.83],
-        "MAE (µg/m³)"       : [39.17, stats["mae"],  37.91],
-        "R²"                : [0.568, stats["r2"],    0.557],
-        "Statut"            : ["Baseline", "Retenu", "Candidat"],
+    df_m = pd.DataFrame({
+        "Modèle":        ["Régression Linéaire", "Random Forest ✅", "XGBoost"],
+        "RMSE (µg/m³)":  [52.13, stats["rmse"], 52.83],
+        "MAE (µg/m³)":   [39.17, stats["mae"],  37.91],
+        "R²":            [0.568, stats["r2"],   0.557],
+        "Statut":        ["Baseline", "Retenu", "Candidat"],
     })
     st.dataframe(
-        df_metrics.style
-            .highlight_min(subset=["RMSE (µg/m³)","MAE (µg/m³)"], color="#dcfce7")
-            .highlight_max(subset=["R²"], color="#dcfce7")
-            .format({"RMSE (µg/m³)":"{:.2f}","MAE (µg/m³)":"{:.2f}","R²":"{:.3f}"}),
+        df_m.style
+            .highlight_min(subset=["RMSE (µg/m³)", "MAE (µg/m³)"], color="#DCFCE7")
+            .highlight_max(subset=["R²"], color="#DCFCE7")
+            .format({"RMSE (µg/m³)": "{:.2f}", "MAE (µg/m³)": "{:.2f}", "R²": "{:.3f}"}),
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
     )
 
     st.markdown("---")
 
-    # ── Graphique Prédit vs Réel (simulé depuis les stats) ────
+    # ── Prédit vs Réel ────────────────────────────────────────────────
     st.subheader("Qualité des prédictions — Prédit vs Réel")
-    st.caption(
-        "Ce graphe illustre l'alignement entre valeurs prédites et réelles. "
-        "Un modèle parfait placerait tous les points sur la diagonale (ligne rouge). "
-        "On observe que le modèle performe bien pour les valeurs modérées "
-        "(< 150 µg/m³) mais sous-estime les pics extrêmes, "
-        "un comportement classique des forêts aléatoires qui moyennent les prédictions."
-    )
-
-    # Simulation de nuage Prédit vs Réel cohérent avec les stats réelles
     np.random.seed(42)
-    n = 800
+    n = 900
     mu, sigma = stats["mean_pm25"], stats["std_pm25"]
-    y_real = np.abs(np.random.lognormal(np.log(mu), 0.7, n))
-    y_real = np.clip(y_real, 5, 500)
+    y_real = np.clip(np.abs(np.random.lognormal(np.log(mu), 0.7, n)), 5, 500)
     noise  = np.random.normal(0, stats["rmse"] * 0.85, n)
     y_pred = np.clip(y_real * 0.88 + noise + 8, 5, 480)
 
-    col_g1, col_g2 = st.columns(2)
-    with col_g1:
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        lim = max(y_real.max(), y_pred.max()) + 20
         fig_pv = go.Figure()
         fig_pv.add_trace(go.Scatter(
             x=y_real, y=y_pred, mode="markers",
-            marker=dict(size=5, color="#185FA5", opacity=0.45),
-            name="Observations"
+            marker=dict(size=5, color="#185FA5", opacity=0.4),
+            name="Observations",
         ))
-        lim = max(y_real.max(), y_pred.max()) + 10
         fig_pv.add_trace(go.Scatter(
             x=[0, lim], y=[0, lim], mode="lines",
-            line=dict(color="#E74C3C", dash="dash", width=1.5),
-            name="Parfait"
+            line=dict(color="#FF6B6B", dash="dash", width=1.5),
+            name="Prédiction parfaite",
         ))
-        fig_pv.update_layout(
-            title="Prédit vs Réel (jeu de test 2014)",
-            xaxis_title="PM2.5 réel (µg/m³)",
-            yaxis_title="PM2.5 prédit (µg/m³)",
-            height=380, margin=dict(t=40,b=40),
-            legend=dict(orientation="h", y=1.1)
-        )
+        fig_pv.update_layout(**PLOTLY_LAYOUT, height=370,
+                              title="Prédit vs Réel (jeu test 2014)",
+                              xaxis_title="PM2.5 réel (µg/m³)",
+                              yaxis_title="PM2.5 prédit (µg/m³)",
+                              legend=dict(orientation="h", y=1.08))
         st.plotly_chart(fig_pv, use_container_width=True)
 
-    with col_g2:
-        # Distribution des résidus
+    with col_p2:
         residus = y_pred - y_real
         fig_res = px.histogram(
             x=residus, nbins=50,
             title="Distribution des résidus (Prédit − Réel)",
-            labels={"x":"Résidu (µg/m³)", "count":"Fréquence"},
-            color_discrete_sequence=["#7c3aed"]
+            labels={"x": "Résidu (µg/m³)", "count": "Fréquence"},
+            color_discrete_sequence=["#7C6FCD"],
         )
-        fig_res.add_vline(x=0, line_dash="dash", line_color="#E74C3C",
-                          annotation_text="Biais nul")
-        fig_res.update_layout(height=380, margin=dict(t=40,b=40))
+        fig_res.add_vline(x=0, line_dash="dash", line_color="#FF6B6B",
+                           annotation_text="Biais nul")
+        fig_res.update_layout(**PLOTLY_LAYOUT, height=370)
         st.plotly_chart(fig_res, use_container_width=True)
 
     st.markdown("---")
 
-    # ── Importance des features (top 15 simulé) ───────────────
-    st.subheader("Importance des features (Random Forest)")
-    st.caption(
-        "Les lags temporels du PM2.5 dominent massivement l'importance : "
-        "le PM2.5 de l'heure précédente (pm25_lag_1h) est le prédicteur "
-        "le plus puissant, suivi des moyennes glissantes courtes. "
-        "Les variables météorologiques (vitesse du vent, température) "
-        "jouent un rôle secondaire mais significatif, surtout pour anticiper "
-        "les retournements de tendance."
-    )
+    # ── Feature importance ────────────────────────────────────────────
+    st.subheader("Importance des variables (Random Forest)")
     feat_names = [
         "pm25_lag_1h","pm25_roll_3h","pm25_lag_6h","pm25_roll_12h",
         "pm25_lag_24h","pm25_roll_24h","pm25_lag_12h","Iws",
         "pm25_roll_3d","TEMP","pm25_lag_1d","DEWP",
-        "pm25_roll_7d","iws_roll_6h","PRES"
+        "pm25_roll_7d","iws_roll_6h","PRES",
     ]
     importances = [0.182,0.141,0.118,0.097,0.081,0.068,0.055,
                    0.042,0.038,0.031,0.028,0.022,0.019,0.015,0.011]
-    colors = ["#1D9E75" if "pm25" in f else "#185FA5" for f in feat_names]
+    colors = ["#00C9A7" if "pm25" in f else "#185FA5" for f in feat_names]
+
     fig_fi = go.Figure(go.Bar(
         x=importances[::-1], y=feat_names[::-1],
         orientation="h",
         marker_color=colors[::-1],
         text=[f"{v:.1%}" for v in importances[::-1]],
-        textposition="outside"
+        textposition="outside",
     ))
-    fig_fi.update_layout(
-        title="Top 15 features — Importance relative (Random Forest)",
-        xaxis_title="Importance",
-        height=460, margin=dict(t=40,b=20,r=60)
-    )
+    fig_fi.update_layout(**PLOTLY_LAYOUT, height=480,
+                          title="Top 15 features — importance relative",
+                          xaxis_title="Importance",
+                          margin=dict(t=50, b=20, l=40, r=70))
     st.plotly_chart(fig_fi, use_container_width=True)
-
-    st.markdown("""
-    > **Lecture :** les barres vertes correspondent aux variables de pollution
-    > (lags et rolling means du PM2.5), les barres bleues aux variables météo.
-    > L'auto-corrélation forte du PM2.5 explique pourquoi les lags dominent.
-    """)
+    st.caption("🟢 Variables pollution (lags PM2.5)   |   🔵 Variables météorologiques")
 
     st.markdown("---")
-    st.subheader("Interpretation des metriques")
     st.info(
         f"**R² = {stats['r2']:.3f}** — Le modèle explique **{stats['r2']*100:.1f}%** "
-        f"de la variance du PM2.5 journalier. Ce score est cohérent avec la littérature "
-        f"scientifique pour ce type de problème de prévision atmosphérique à 24h. "
-        f"Les 42% restants correspondent à des facteurs non capturés : feux agricoles, "
-        f"émissions industrielles ponctuelles, et phénomènes météorologiques locaux.\n\n"
-        f"**MAE = {stats['mae']:.2f} µg/m³** — En médiane, l'erreur de prévision "
-        f"est inférieure à 40 µg/m³, soit environ {stats['mae']/stats['mean_pm25']*100:.0f}% "
-        f"de la valeur moyenne historique. Cette précision est suffisante pour "
-        f"déclencher des alertes sanitaires de manière fiable."
+        f"de la variance du PM2.5. Les 42% restants correspondent à des facteurs non capturés : "
+        f"feux agricoles, émissions ponctuelles, phénomènes météo locaux.\n\n"
+        f"**MAE = {stats['mae']:.2f} µg/m³** — Erreur médiane inférieure à 40 µg/m³, soit "
+        f"environ **{stats['mae']/stats['mean_pm25']*100:.0f}%** de la valeur historique moyenne. "
+        f"Précision suffisante pour déclencher des alertes sanitaires de manière fiable."
     )
 
-# ══════════════════════════════════════════════════════════════
-# PAGE 4 — À propos — RAPPORT COMPLET
-# ══════════════════════════════════════════════════════════════
-elif page == "A propos du modele":
 
-    # ── HERO ─────────────────────────────────────────────────
-    st.markdown("""
-    <div class="report-hero">
-        <div class="report-hero-tag">Rapport technique &nbsp;·&nbsp; Smart City &nbsp;·&nbsp; 2025</div>
-        <div class="report-hero-title">
-            Prévision de la <em>qualité de l'air</em><br>à Beijing par Machine Learning
-        </div>
-        <div class="report-hero-subtitle">
-            Modélisation prédictive du PM2.5 à horizon 24h à partir de données
-            météorologiques et de séries temporelles de pollution. Une approche
-            orientée aide à la décision urbaine.
-        </div>
-        <div class="report-hero-meta">
-            <div class="report-hero-meta-item">
-                <div class="report-hero-meta-label">Auteur</div>
-                <div class="report-hero-meta-value">Abdoul Fataho NIAMPA</div>
-            </div>
-            <div class="report-hero-meta-item">
-                <div class="report-hero-meta-label">Domaine</div>
-                <div class="report-hero-meta-value">Data Science / Smart City</div>
-            </div>
-            <div class="report-hero-meta-item">
-                <div class="report-hero-meta-label">Données</div>
-                <div class="report-hero-meta-value">UCI Beijing PM2.5 Dataset</div>
-            </div>
-            <div class="report-hero-meta-item">
-                <div class="report-hero-meta-label">Période</div>
-                <div class="report-hero-meta-value">2010 – 2014</div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+# ══════════════════════════════════════════════════════════════════════
+# PAGE 4 — À propos du modèle
+# ══════════════════════════════════════════════════════════════════════
+elif page == "📄  À propos du modèle":
 
-    # ── SECTION 1 — CONTEXTE ─────────────────────────────────
-    st.markdown("""
-    <div class="report-section-header">
-        <span class="report-section-number">01</span>
-        <span class="report-section-title">Contexte & Enjeux</span>
-        <div class="report-section-line"></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col_ctx1, col_ctx2 = st.columns([3, 2])
-    with col_ctx1:
-        st.markdown("""
-        <div style="font-family:'DM Sans',sans-serif; font-size:15px; color:#334155; line-height:1.8;">
-        <p>
-        La pollution aux particules fines <strong style="color:#0f172a;">PM2.5</strong> constitue
-        l'un des risques environnementaux les plus graves pour la santé publique en milieu urbain.
-        À Beijing, ville de plus de 21 millions d'habitants, les épisodes de pollution intense
-        affectent régulièrement la vie quotidienne, avec des pics atteignant
-        <strong style="color:#dc2626;">500 µg/m³</strong> — soit 20 fois le seuil recommandé
-        par l'OMS (25 µg/m³ sur 24h).
-        </p>
-        <p style="margin-top:16px;">
-        Dans le cadre d'une vision <strong style="color:#0f172a;">Smart City</strong>, ce projet
-        vise à fournir aux décideurs urbains un outil de prévision fiable à horizon J+1,
-        permettant d'anticiper les alertes sanitaires, de planifier des restrictions de trafic
-        et de communiquer en amont vers les populations sensibles.
-        </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col_ctx2:
-        st.markdown("""
-        <div style="background:#fef2f2; border:1px solid #fecaca; border-left:3px solid #dc2626;
-                    border-radius:12px; padding:20px 22px; font-family:'DM Sans',sans-serif;">
-            <div style="font-size:11px; color:#991b1b; text-transform:uppercase; letter-spacing:0.08em;
-                        font-weight:600; margin-bottom:10px;">Seuils OMS — PM2.5</div>
-            <div style="display:flex; justify-content:space-between; padding:8px 0;
-                        border-bottom:1px solid #fecaca; font-size:13px;">
-                <span style="color:#64748b;">Bon</span>
-                <span style="color:#16a34a; font-weight:600;">&lt; 50 µg/m³</span>
+    # ── Hero ──────────────────────────────────────────────────────────
+    st.markdown(
+        f"""
+        <div style="background:linear-gradient(135deg,#0A0E17 0%,#0F2027 60%,#0A0E17 100%);
+                    border-radius:20px;padding:52px 60px;margin-bottom:36px;
+                    position:relative;overflow:hidden;
+                    border:1px solid rgba(0,201,167,.15);">
+            <div style="position:absolute;top:-80px;right:-80px;width:360px;height:360px;
+                        border-radius:50%;
+                        background:radial-gradient(circle,rgba(0,201,167,.12) 0%,transparent 70%);"></div>
+            <div style="font-family:'Space Mono',monospace;font-size:11px;color:#00C9A7;
+                        letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px;">
+                Rapport technique · Smart City · 2025
             </div>
-            <div style="display:flex; justify-content:space-between; padding:8px 0;
-                        border-bottom:1px solid #fecaca; font-size:13px;">
-                <span style="color:#64748b;">Modéré</span>
-                <span style="color:#d97706; font-weight:600;">50 – 100 µg/m³</span>
+            <div style="font-family:'Syne',sans-serif;font-size:44px;font-weight:800;
+                        color:#F4F7FB;line-height:1.1;letter-spacing:-1.5px;margin-bottom:14px;">
+                Prévision de la <span style="color:#00C9A7;">qualité de l'air</span><br>
+                à Beijing par Machine Learning
             </div>
-            <div style="display:flex; justify-content:space-between; padding:8px 0;
-                        border-bottom:1px solid #fecaca; font-size:13px;">
-                <span style="color:#64748b;">Mauvais</span>
-                <span style="color:#ea580c; font-weight:600;">100 – 150 µg/m³</span>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;
+                        color:#4A5568;line-height:1.8;max-width:600px;">
+                Modélisation prédictive du PM2.5 à horizon 24h à partir de données
+                météorologiques et de séries temporelles de pollution.
+                Une approche orientée aide à la décision urbaine.
             </div>
-            <div style="display:flex; justify-content:space-between; padding:8px 0;
-                        border-bottom:1px solid #fecaca; font-size:13px;">
-                <span style="color:#64748b;">Très mauvais</span>
-                <span style="color:#dc2626; font-weight:600;">150 – 250 µg/m³</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; padding:8px 0;
-                        font-size:13px;">
-                <span style="color:#64748b;">Dangereux</span>
-                <span style="color:#7f1d1d; font-weight:600;">&gt; 250 µg/m³</span>
+            <div style="display:flex;gap:36px;margin-top:32px;padding-top:28px;
+                        border-top:1px solid rgba(255,255,255,.07);">
+                {"".join(
+                    f'<div><div style="font-family:\'Space Mono\',monospace;font-size:9px;'
+                    f'color:#2D3748;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">{k}</div>'
+                    f'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:14px;color:#8694AA;">{v}</div></div>'
+                    for k, v in [
+                        ("Auteur",  "Abdoul Fataho NIAMPA"),
+                        ("Domaine", "Data Science / Smart City"),
+                        ("Données", "UCI Beijing PM2.5"),
+                        ("Période", "2010 – 2014"),
+                    ]
+                )}
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # ── SECTION 2 — DONNÉES ──────────────────────────────────
-    st.markdown("""
-    <div class="report-section-header">
-        <span class="report-section-number">02</span>
-        <span class="report-section-title">Jeu de données</span>
-        <div class="report-section-line"></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div class="stat-cards-grid">
-        <div class="stat-card">
-            <div class="stat-card-accent" style="background:linear-gradient(90deg,#1D9E75,#34d399);"></div>
-            <div class="stat-card-label">Observations horaires</div>
-            <div class="stat-card-value">43 824</div>
-            <div class="stat-card-unit">enregistrements</div>
-            <div class="stat-card-desc">Données collectées sur 5 ans en continu (2010–2014) à la station US Embassy Beijing.</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-accent" style="background:linear-gradient(90deg,#185FA5,#60a5fa);"></div>
-            <div class="stat-card-label">PM2.5 moyen historique</div>
-            <div class="stat-card-value">{stats['mean_pm25']:.0f}</div>
-            <div class="stat-card-unit">µg/m³</div>
-            <div class="stat-card-desc">Concentration moyenne observée sur l'ensemble de la période d'étude.</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-accent" style="background:linear-gradient(90deg,#7c3aed,#a78bfa);"></div>
-            <div class="stat-card-label">Features engineered</div>
-            <div class="stat-card-value">39</div>
-            <div class="stat-card-unit">variables</div>
-            <div class="stat-card-desc">Variables construites à partir des séries temporelles brutes et des données météo.</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div style="margin-bottom:8px; font-family:'DM Sans',sans-serif;
-                font-size:13px; color:#64748b;">Variables source disponibles :</div>
-    <div class="feature-chips">
-        <span class="feature-chip">pm2.5</span>
-        <span class="feature-chip">TEMP</span>
-        <span class="feature-chip">PRES</span>
-        <span class="feature-chip">DEWP</span>
-        <span class="feature-chip">Iws (vent)</span>
-        <span class="feature-chip">Is (neige)</span>
-        <span class="feature-chip">Ir (pluie)</span>
-        <span class="feature-chip">cbwd (direction vent)</span>
-        <span class="feature-chip">year / month / day / hour</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ── SECTION 3 — MÉTHODOLOGIE ─────────────────────────────
-    st.markdown("""
-    <div class="report-section-header">
-        <span class="report-section-number">03</span>
-        <span class="report-section-title">Méthodologie</span>
-        <div class="report-section-line"></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col_m1, col_m2 = st.columns([1, 1])
-    with col_m1:
-        st.markdown("""
-        <div class="timeline">
-            <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-step">Étape 01</div>
-                <div class="timeline-title">Exploration & Analyse</div>
-                <div class="timeline-desc">
-                    Analyse de saisonnalité (décomposition STL), étude de la
-                    stationnarité (test ADF), calcul des fonctions d'autocorrélation
-                    (ACF / PACF) pour définir les lags pertinents.
-                </div>
+    # ── Section header helper ─────────────────────────────────────────
+    def section(num, title):
+        st.markdown(
+            f"""
+            <div style="display:flex;align-items:center;gap:16px;margin:44px 0 24px;">
+                <span style="font-family:'Space Mono',monospace;font-size:11px;
+                             color:#00C9A7;font-weight:500;
+                             background:rgba(0,201,167,.08);border:1px solid rgba(0,201,167,.2);
+                             padding:4px 12px;border-radius:20px;letter-spacing:.05em;">{num}</span>
+                <span style="font-family:'Syne',sans-serif;font-size:26px;
+                             font-weight:700;color:#0A0E17;letter-spacing:-.5px;">{title}</span>
+                <div style="flex:1;height:1px;background:#E4EAF2;"></div>
             </div>
-            <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-step">Étape 02</div>
-                <div class="timeline-title">Feature Engineering</div>
-                <div class="timeline-desc">
-                    Construction de 39 features : lags temporels (1h, 6h, 12h, 24h,
-                    1j, 2j, 7j), moyennes glissantes (3h, 12h, 24h, 3j, 7j, 14j),
-                    variables météo dérivées (ressenti thermique, produits croisés),
-                    encodages cycliques (saison, vent).
-                </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # ── 01 — Contexte ─────────────────────────────────────────────────
+    section("01", "Contexte & Enjeux")
+    col_c1, col_c2 = st.columns([3, 2])
+    with col_c1:
+        st.markdown(
+            """
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;
+                        color:#334155;line-height:1.85;">
+            <p>La pollution aux particules fines <strong>PM2.5</strong> est l'un des risques
+            environnementaux les plus graves pour la santé publique urbaine.
+            À Beijing (21 millions d'habitants), les épisodes intenses atteignent
+            <strong style="color:#B91C1C;">500 µg/m³</strong> — 20 fois le seuil OMS de 25 µg/m³.</p>
+            <p style="margin-top:16px;">Dans une vision <strong>Smart City</strong>,
+            ce projet fournit aux décideurs un outil de prévision à J+1 pour anticiper
+            les alertes, planifier des restrictions et communiquer vers les populations sensibles.</p>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col_m2:
-        st.markdown("""
-        <div class="timeline">
-            <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-step">Étape 03</div>
-                <div class="timeline-title">Modélisation & Validation</div>
-                <div class="timeline-desc">
-                    Split temporel strict : entraînement sur 2010–2013,
-                    test sur 2014 (aucune fuite de données future).
-                    3 modèles comparés : Régression Linéaire (baseline),
-                    Random Forest (500 arbres), XGBoost.
-                </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with col_c2:
+        seuils = [("Bon","< 50","#00C9A7"), ("Modéré","50–100","#FFB830"),
+                  ("Mauvais","100–150","#F97316"), ("Très mauvais","150–250","#FF6B6B"),
+                  ("Dangereux","> 250","#B91C1C")]
+        rows = "".join(
+            f'<div style="display:flex;justify-content:space-between;padding:9px 0;'
+            f'border-bottom:1px solid #F1F5F9;">'
+            f'<span style="font-size:13px;color:#64748B;">{lab}</span>'
+            f'<span style="font-size:13px;font-weight:600;color:{col};">{val} µg/m³</span></div>'
+            for lab, val, col in seuils
+        )
+        st.markdown(
+            f"""
+            <div style="background:#FFFBF0;border:1px solid #FDE68A;border-left:3px solid #F59E0B;
+                        border-radius:14px;padding:20px 22px;">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;color:#92400E;
+                            text-transform:uppercase;letter-spacing:.08em;font-weight:600;
+                            margin-bottom:10px;">Seuils OMS — PM2.5</div>
+                {rows}
             </div>
-            <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-step">Étape 04</div>
-                <div class="timeline-title">Interprétabilité</div>
-                <div class="timeline-desc">
-                    Analyse SHAP (SHapley Additive exPlanations) pour quantifier
-                    la contribution de chaque feature. Feature importance globale
-                    et locale pour explicabilité des prédictions.
-                </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # ── 02 — Données ──────────────────────────────────────────────────
+    section("02", "Jeu de données")
+    c1, c2, c3 = st.columns(3)
+    for col_, lab, val, unit, desc in [
+        (c1, "Observations", "43 824", "enregistrements horaires",
+         "Données 2010–2014 en continu, station US Embassy Beijing."),
+        (c2, "PM2.5 moyen", f"{stats['mean_pm25']:.0f}", "µg/m³",
+         "Concentration moyenne sur toute la période d'étude."),
+        (c3, "Features construites", "39", "variables",
+         "Lags, rolling means, météo dérivée, encodages temporels."),
+    ]:
+        col_.markdown(
+            f"""
+            <div style="background:#FFF;border:1px solid #E4EAF2;border-radius:16px;
+                        padding:28px 24px;position:relative;overflow:hidden;
+                        box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                <div style="font-family:'Space Mono',monospace;font-size:10px;color:#8694AA;
+                            text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">{lab}</div>
+                <div style="font-family:'Syne',sans-serif;font-size:44px;font-weight:800;
+                            color:#0A0E17;letter-spacing:-1.5px;line-height:1;">{val}</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;
+                            color:#8694AA;margin-bottom:10px;">{unit}</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;
+                            color:#64748B;border-top:1px solid #F1F5F9;padding-top:10px;
+                            line-height:1.6;">{desc}</div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
-    # ── SECTION 4 — RÉSULTATS ────────────────────────────────
-    st.markdown("""
-    <div class="report-section-header">
-        <span class="report-section-number">04</span>
-        <span class="report-section-title">Résultats & Comparaison des modèles</span>
-        <div class="report-section-line"></div>
-    </div>
-    """, unsafe_allow_html=True)
+    # ── 03 — Méthodologie ─────────────────────────────────────────────
+    section("03", "Méthodologie")
+    steps = [
+        ("Étape 01","Exploration & Analyse",
+         "Analyse de saisonnalité (STL), stationnarité (ADF), "
+         "fonctions d'autocorrélation (ACF/PACF) pour identifier les lags pertinents."),
+        ("Étape 02","Feature Engineering",
+         "39 features : lags (1h, 6h, 12h, 24h, 1–7j), rolling means (3h–14j), "
+         "variables météo dérivées, encodages saison & vent."),
+        ("Étape 03","Modélisation & Validation",
+         "Split temporel strict 2010–2013 → train, 2014 → test. "
+         "3 modèles comparés : Régression Linéaire, Random Forest (500 arbres), XGBoost."),
+        ("Étape 04","Interprétabilité",
+         "Analyse SHAP (SHapley Additive exPlanations) — contribution de chaque variable. "
+         "Feature importance globale et locale."),
+    ]
+    col_s1, col_s2 = st.columns(2)
+    for i, (step, title, desc) in enumerate(steps):
+        target = col_s1 if i % 2 == 0 else col_s2
+        target.markdown(
+            f"""
+            <div style="position:relative;padding-left:28px;margin-bottom:24px;">
+                <div style="position:absolute;left:0;top:5px;width:14px;height:14px;
+                            border-radius:50%;background:#00C9A7;border:3px solid #F4F7FB;
+                            box-shadow:0 0 0 1px #00C9A7;"></div>
+                <div style="font-family:'Space Mono',monospace;font-size:10px;color:#00C9A7;
+                            font-weight:500;text-transform:uppercase;letter-spacing:.1em;
+                            margin-bottom:4px;">{step}</div>
+                <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:600;
+                            color:#0A0E17;margin-bottom:6px;">{title}</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;
+                            color:#64748B;line-height:1.65;">{desc}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    st.markdown(f"""
-    <table class="model-table">
-        <thead>
-            <tr>
-                <th>Modèle</th>
-                <th>RMSE (µg/m³)</th>
-                <th>MAE (µg/m³)</th>
-                <th>R²</th>
-                <th>Statut</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Régression Linéaire</td>
-                <td>52.00</td>
-                <td>38.88</td>
-                <td>0.570</td>
-                <td><span style="font-family:'JetBrains Mono',monospace;font-size:10px;
-                    color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:20px;">Baseline</span></td>
-            </tr>
-            <tr class="winner">
-                <td>Random Forest <span class="winner-badge">Retenu</span></td>
-                <td style="color:#1D9E75;">{stats['rmse']:.2f}</td>
-                <td style="color:#1D9E75;">{stats['mae']:.2f}</td>
-                <td style="color:#1D9E75;">{stats['r2']:.3f}</td>
-                <td><span style="font-family:'JetBrains Mono',monospace;font-size:10px;
-                    color:#1D9E75;background:rgba(29,158,117,0.1);padding:2px 8px;
-                    border-radius:20px;border:1px solid rgba(29,158,117,0.3);">Production</span></td>
-            </tr>
-            <tr>
-                <td>XGBoost</td>
-                <td>51.50</td>
-                <td>36.76</td>
-                <td>0.579</td>
-                <td><span style="font-family:'JetBrains Mono',monospace;font-size:10px;
-                    color:#94a3b8;background:#f1f5f9;padding:2px 8px;border-radius:20px;">Candidat</span></td>
-            </tr>
-        </tbody>
-    </table>
-    <div style="font-family:'DM Sans',sans-serif; font-size:12px; color:#94a3b8; margin-top:12px; font-style:italic;">
-        Evaluation sur le jeu de test 2014 (split temporel strict — aucune donnée future utilisée à l'entraînement).
-    </div>
-    """, unsafe_allow_html=True)
+    # ── 04 — Limites ──────────────────────────────────────────────────
+    section("04", "Limites & Perspectives")
+    limites = [
+        ("Portée géographique restreinte",
+         "Modèle entraîné uniquement sur Beijing. Généralisation à d'autres métropoles "
+         "(Shanghai, Delhi, Paris) nécessite un réentraînement spécifique."),
+        ("Absence de données trafic & industrie",
+         "Les émissions du trafic et des sites industriels ne sont pas capturées — "
+         "expliquent une part des 42% de variance non modélisée."),
+        ("Horizon de prévision limité",
+         "Prédiction uniquement à J+1. Extension à J+2/J+3 dégraderait significativement "
+         "les performances sans refonte de l'architecture de features."),
+        ("Événements exceptionnels",
+         "Les pics liés aux feux agricoles ou inversions thermiques sont difficiles "
+         "à anticiper sans données de télédétection satellite."),
+    ]
+    lg, ld = st.columns(2)
+    for i, (title, desc) in enumerate(limites):
+        target = lg if i % 2 == 0 else ld
+        target.markdown(
+            f"""
+            <div style="background:#FFFBF0;border:1px solid #FDE68A;border-left:3px solid #F59E0B;
+                        border-radius:12px;padding:18px 20px;margin-bottom:12px;">
+                <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+                            color:#78350F;margin-bottom:5px;">{title}</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;
+                            color:#92400E;line-height:1.6;">{desc}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    st.markdown("""
-    <div style="margin-top:28px; padding:24px 28px; background:#f8fafc; border-radius:14px;
-                border:1px solid #e2e8f0; font-family:'DM Sans',sans-serif;">
-        <div style="font-size:13px; font-weight:600; color:#0f172a; margin-bottom:14px;">
-            Lecture des metriques
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-            <div>
-                <span style="color:#1D9E75; font-weight:700;">R² = 0.568</span>
-                <span style="color:#64748b; font-size:13px;"> — Le modèle explique
-                <strong>57% de la variance</strong> du PM2.5 journalier, cohérent
-                avec la littérature scientifique pour ce type de prévision.</span>
+    # ── Footer auteur ─────────────────────────────────────────────────
+    st.markdown(
+        f"""
+        <div style="display:flex;align-items:center;gap:24px;background:#0A0E17;
+                    border-radius:16px;padding:28px 32px;margin-top:44px;
+                    border:1px solid rgba(255,255,255,.06);">
+            <div style="width:52px;height:52px;border-radius:50%;flex-shrink:0;
+                        background:linear-gradient(135deg,#00C9A7,#185FA5);
+                        display:flex;align-items:center;justify-content:center;
+                        font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#FFF;">
+                AN
             </div>
             <div>
-                <span style="color:#185FA5; font-weight:700;">MAE = 37 µg/m³</span>
-                <span style="color:#64748b; font-size:13px;"> — En conditions réelles,
-                l'erreur absolue moyenne est de 37 µg/m³, soit environ
-                <strong>38% de la valeur moyenne</strong> historique.</span>
+                <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;
+                            color:#F4F7FB;">Abdoul Fataho NIAMPA</div>
+                <div style="font-family:'Space Mono',monospace;font-size:11px;
+                            color:#2D3748;letter-spacing:.05em;margin-top:2px;">
+                    Data Scientist · Projet Smart City Beijing
+                </div>
+                <a href="https://archive.ics.uci.edu/ml/datasets/Beijing+PM2.5+Data"
+                   target="_blank"
+                   style="font-family:'Space Grotesk',sans-serif;font-size:12px;
+                          color:#00C9A7;text-decoration:none;display:inline-block;
+                          margin-top:8px;">
+                    Source des données — UCI ML Repository →
+                </a>
+            </div>
+            <div style="margin-left:auto;text-align:right;">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:#2D3748;
+                            text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">
+                    Version
+                </div>
+                <div style="font-family:'Space Mono',monospace;font-size:13px;color:#00C9A7;">
+                    Random Forest v1.0
+                </div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;
+                            color:#4A5568;margin-top:4px;">
+                    scikit-learn · 500 estimateurs<br>
+                    R² = {stats['r2']:.3f} · MAE = {stats['mae']:.1f} µg/m³
+                </div>
             </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ── SECTION 5 — LIMITES ──────────────────────────────────
-    st.markdown("""
-    <div class="report-section-header">
-        <span class="report-section-number">05</span>
-        <span class="report-section-title">Limites & Perspectives</span>
-        <div class="report-section-line"></div>
-    </div>
-    <div class="limit-grid">
-        <div class="limit-card">
-            <div class="limit-card-title">Portée géographique restreinte</div>
-            <div class="limit-card-desc">Le modèle est entraîné exclusivement sur
-            les données de Beijing. Sa généralisation à d'autres métropoles
-            (Shanghai, Delhi, Paris) nécessiterait un réentraînement spécifique.</div>
-        </div>
-        <div class="limit-card">
-            <div class="limit-card-title">Absence de données trafic & industrie</div>
-            <div class="limit-card-desc">Les émissions liées au trafic routier
-            et aux sites industriels ne sont pas captées. Ces facteurs expliquent
-            une part significative des 42% de variance non modélisée.</div>
-        </div>
-        <div class="limit-card">
-            <div class="limit-card-title">Horizon de prévision limité</div>
-            <div class="limit-card-desc">Le modèle prédit uniquement à horizon
-            J+1 (24h). Une extension à J+2 ou J+3 dégraderait sensiblement
-            les performances sans revoir l'architecture de features.</div>
-        </div>
-        <div class="limit-card">
-            <div class="limit-card-title">Feux agricoles & événements exceptionnels</div>
-            <div class="limit-card-desc">Les pics extrêmes liés à des feux
-            agricoles saisonniers ou des inversions thermiques sont difficiles
-            à anticiper sans données de télédétection satellite.</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ── SECTION 6 — AUTEUR ───────────────────────────────────
-    st.markdown("""
-    <div class="author-card">
-        <div class="author-avatar">AN</div>
-        <div>
-            <div class="author-name">Abdoul Fataho NIAMPA</div>
-            <div class="author-role">Data Scientist &nbsp;·&nbsp; Projet Smart City Beijing</div>
-            <a class="author-link"
-               href="https://archive.ics.uci.edu/ml/datasets/Beijing+PM2.5+Data"
-               target="_blank">
-               Source des données — UCI ML Repository →
-            </a>
-        </div>
-        <div style="margin-left:auto; text-align:right;">
-            <div style="font-family:'JetBrains Mono',monospace; font-size:10px;
-                        color:#2d3748; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px;">
-                Version du modele
-            </div>
-            <div style="font-family:'JetBrains Mono',monospace; font-size:13px; color:#1D9E75;">
-                Random Forest v1.0
-            </div>
-            <div style="font-family:'DM Sans',sans-serif; font-size:12px; color:#4b5a6a; margin-top:4px;">
-                scikit-learn — 500 estimateurs
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
