@@ -293,13 +293,22 @@ PALETTE_MODELS  = {
     "LightGBM"           : "#10B981",
 }
 
-# Métriques comparatives (les 3 premières sont fixes ; LightGBM vient de stats[])
-# Elles sont définies après le chargement de stats pour être dynamiques
+# ── Tableau comparatif des 4 modèles entraînés sur le jeu test 2014 ──────────
+# Chaque ligne correspond à un algorithme évalué sur le même split temporel strict.
+# Les métriques des 3 modèles de référence sont fixées depuis les sorties du notebook.
+# Seule la ligne LightGBM (modèle retenu) est dynamique : elle lit les valeurs
+# depuis model_stats.json, ce qui permet de mettre à jour l'app sans toucher au code.
+#
+# Structure des listes : [Régression Linéaire, Random Forest, XGBoost, LightGBM]
+# → 4 modèles, 4 valeurs par colonne — format valide pour pd.DataFrame.
 DF_MODELS = pd.DataFrame({
-    "Modèle" : ["Régression Linéaire","Random Forest","XGBoost","LightGBM"],
-    "RMSE"   : [52.13, 52.12, 52.83, stats["rmse"]],
-    "MAE"    : [39.17, 37.26, 37.91, stats["mae"]],
-    "R²"     : [0.568, 0.568, 0.557, stats["r2"]],
+    "Modèle" : ["Régression Linéaire", "Random Forest", "XGBoost", "LightGBM"],
+    # RMSE (Root Mean Squared Error) — pénalise davantage les grandes erreurs
+    "RMSE"   : [52.13,        52.12,        52.83,        stats["rmse"]],
+    # MAE (Mean Absolute Error) — erreur moyenne directement interprétable en µg/m³
+    "MAE"    : [39.17,        37.26,        37.91,        stats["mae"]],
+    # R² — proportion de variance du PM2.5 expliquée par le modèle (0=nul, 1=parfait)
+    "R²"     : [0.568,        0.568,        0.557,        stats["r2"]],
 })
 
 # Helpers CSS
@@ -523,6 +532,9 @@ if page == "Accueil & Prédiction":
             )
 
         with col_r2:
+            # Jauge circulaire : les zones de couleur correspondent aux seuils AQI.
+            # L'aiguille noire indique la valeur prédite.
+            # Le trait noir épais à 150 µg/m³ marque le seuil d'alerte critique.
             fig_g = go.Figure(go.Indicator(
                 mode="gauge+number",
                 value=prediction,
@@ -600,6 +612,10 @@ if page == "Accueil & Prédiction":
 
         g_labels = list(group_scores.keys())
         g_values = list(group_scores.values())
+        # Barres horizontales : score = somme(importance_feature × écart_normalisé_à_la_moyenne).
+        # Un score positif (rouge) signifie que les valeurs saisies sont supérieures
+        # à la moyenne historique dans ce groupe → tend à augmenter le PM2.5 prédit.
+        # Un score négatif (vert) signifie des conditions plus favorables que la moyenne.
         fig_inf = go.Figure(go.Bar(
             x=g_values, y=g_labels, orientation="h",
             marker=dict(
@@ -684,9 +700,11 @@ elif page == "Historique & Tendances":
     df_sel = df[df.index.year.isin(year_sel)].copy()
     df_sel["saison"] = df_sel.index.month.map(SAISON_MAP)
 
-    # KPIs
-    pct_d = (df_sel["pm25"] > 150).mean() * 100
-    pct_b = (df_sel["pm25"] < 50).mean()  * 100
+    # ── Indicateurs clés dynamiques ──────────────────────────────────────────
+    # Recalculés à chaque changement de filtre année pour rester cohérents
+    # avec les données affichées dans les graphiques ci-dessous.
+    pct_d = (df_sel["pm25"] > 150).mean() * 100   # % d'heures en zone dangereuse
+    pct_b = (df_sel["pm25"] < 50).mean()  * 100   # % d'heures en bonne qualité
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("PM2.5 moyen",           f"{df_sel['pm25'].mean():.0f} µg/m³")
     k2.metric("PM2.5 médian",          f"{df_sel['pm25'].median():.0f} µg/m³")
@@ -699,6 +717,15 @@ elif page == "Historique & Tendances":
     sec("01", "Série temporelle journalière")
     st.caption("Forte saisonnalité hivernale : pics > 300 µg/m³ en décembre–février liés aux inversions thermiques.")
 
+    # ── Graphique 1 : Série temporelle journalière ───────────────────────────
+    # Représentation en deux couches superposées :
+    #   - Trait gris fin   = moyenne journalière brute (1 point / jour)
+    #   - Trait bleu épais = moyenne mobile centrée sur 7 jours (lissage)
+    # La moyenne mobile révèle la tendance saisonnière en atténuant le bruit.
+    # Les lignes de seuil (OMS à 25 µg/m³ et alerte à 150 µg/m³) servent
+    # de repères normatifs pour évaluer l'ampleur des dépassements.
+    # La zone rouge translucide au-dessus de 150 µg/m³ met en évidence
+    # visuellement les périodes de danger sans surcharger le graphique.
     daily = df_sel["pm25"].resample("D").mean()
     roll7 = daily.rolling(7, center=True).mean()
     fig_ts = go.Figure()
@@ -728,6 +755,12 @@ elif page == "Historique & Tendances":
 
     c1, c2 = st.columns(2)
     with c1:
+        # ── Graphique 2a : PM2.5 moyen par mois ─────────────────────────────
+        # Barres colorées par valeur (échelle RdYlGn_r : rouge = polluant, vert = propre).
+        # La couleur encode directement l'intensité sans avoir besoin d'une légende,
+        # rendant la lecture instantanée même pour un non-expert.
+        # Les valeurs numériques en haut de chaque barre facilitent la comparaison
+        # précise entre mois sans avoir à lire l'axe Y.
         monthly = df_sel.groupby(df_sel.index.month)["pm25"].mean()
         fig_m = go.Figure(go.Bar(
             x=[MOIS_FR[i-1] for i in monthly.index], y=monthly.values.round(1),
@@ -743,6 +776,14 @@ elif page == "Historique & Tendances":
         st.plotly_chart(fig_m, use_container_width=True)
 
     with c2:
+        # ── Graphique 2b : Distribution PM2.5 par saison (boxplot) ─────────
+        # Lecture d'un boxplot :
+        #   - Ligne centrale   = médiane (50% des observations en dessous)
+        #   - Boîte            = intervalle interquartile Q1–Q3 (50% central)
+        #   - Moustaches       = 1.5 × IQR au-delà de la boîte
+        #   - Points isolés    = valeurs aberrantes (épisodes extrêmes)
+        # Permet de voir d'un coup d'œil la dispersion, la médiane et les outliers
+        # pour chaque saison — plus riche qu'une simple moyenne.
         fig_box = px.box(df_sel, x="saison", y="pm25", color="saison",
             category_orders={"saison":["Hiver","Printemps","Été","Automne"]},
             color_discrete_map=PALETTE_SAISONS, title="Distribution PM2.5 par saison")
@@ -760,6 +801,14 @@ elif page == "Historique & Tendances":
     sec("03", "Profil horaire moyen")
     st.caption("Double pic journalier : matinal (7h–9h, trafic) et nocturne (21h–23h, refroidissement). Le creux de 13h–15h correspond à la couche de mélange la plus haute.")
 
+    # ── Graphique 3 : Profil horaire moyen ───────────────────────────────
+    # Pour chaque heure h ∈ [0, 23], on calcule la moyenne du PM2.5 sur TOUS
+    # les jours de la sélection — ce qui donne le "profil type" d'une journée.
+    # Le remplissage sous la courbe (area chart) accentue visuellement les pics
+    # matinaux (7h–9h) liés au démarrage du trafic et des activités industrielles,
+    # et nocturnes (21h–23h) liés au refroidissement et à la baisse du vent.
+    # Le creux de 13h–15h correspond à la couche de mélange atmosphérique maximale,
+    # qui dilue les polluants en altitude.
     hourly = df_sel.groupby(df_sel.index.hour)["pm25"].mean().reset_index()
     hourly.columns = ["heure", "pm25"]
     fig_h = go.Figure()
@@ -785,7 +834,15 @@ elif page == "Historique & Tendances":
     df_s = df_sel.sample(min(3000, len(df_sel)), random_state=42)
     c3, c4 = st.columns(2)
     with c3:
-        # Tendance calculée par binning + médiane (évite la dépendance statsmodels)
+        # ── Graphique 4a : PM2.5 vs Vitesse du vent ──────────────────────────
+        # Nuage de points (3 000 observations échantillonnées aléatoirement)
+        # avec une courbe de tendance calculée par binning + médiane par bin.
+        # On évite ici trendline="lowess" de Plotly Express qui requiert
+        # statsmodels, non installé sur Streamlit Cloud → approche numpy/pandas pure.
+        # Interprétation attendue : relation négative (décroissante).
+        # Un vent fort (Iws > 50 m/s) disperse mécaniquement les particules fines,
+        # réduisant significativement le PM2.5. À l'inverse, en conditions calmes
+        # (Iws < 5 m/s), les polluants s'accumulent en couche basse.
         iws_bins  = pd.cut(df_s["Iws"], bins=20)
         iws_trend = df_s.groupby(iws_bins, observed=True)["pm25"].median().reset_index()
         iws_trend["Iws_mid"] = iws_trend["Iws"].apply(lambda x: x.mid)
@@ -812,6 +869,16 @@ elif page == "Historique & Tendances":
         st.plotly_chart(fig_w, use_container_width=True)
 
     with c4:
+        # ── Graphique 4b : PM2.5 vs Température ──────────────────────────────
+        # Même approche binning que le graphique vent (sans statsmodels).
+        # La relation observée est non-linéaire :
+        #   - Températures négatives (hiver) → PM2.5 élevé : inversions thermiques,
+        #     chauffage résidentiel au charbon, faible ventilation atmosphérique.
+        #   - Températures positives (printemps/été) → PM2.5 modéré à bas :
+        #     couche de mélange plus haute, vents plus actifs, pluies.
+        # Ce graphique illustre pourquoi TEMP est une feature importante du modèle
+        # mais insuffisante seule (la causalité est indirecte — c'est la saison
+        # qui joue, pas la température en elle-même).
         temp_bins  = pd.cut(df_s["TEMP"], bins=20)
         temp_trend = df_s.groupby(temp_bins, observed=True)["pm25"].median().reset_index()
         temp_trend["TEMP_mid"] = temp_trend["TEMP"].apply(lambda x: x.mid)
@@ -843,6 +910,15 @@ elif page == "Historique & Tendances":
     sec("05", "Heatmap — Jour de semaine × Heure")
     st.caption("La pollution est légèrement plus basse le week-end en journée, mais les nuits de vendredi et samedi restent élevées.")
 
+    # ── Graphique 5 : Heatmap Jour × Heure ────────────────────────────────
+    # Matrice 7 lignes (jours) × 24 colonnes (heures) :
+    # chaque cellule contient la moyenne du PM2.5 pour ce couple (jour, heure).
+    # Le double groupby sur [dayofweek, hour] produit un MultiIndex ;
+    # unstack() le pivote en DataFrame 7×24 attendu par go.Heatmap.
+    # L'échelle RdYlGn_r (rouge=fort, vert=faible) permet une lecture
+    # intuitive sans passer par la colorbar.
+    # Lecture : les cellules les plus sombres (rouge foncé) indiquent
+    # les combinaisons jour/heure les plus polluées sur la période.
     jours = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"]
     hm = df_sel.groupby([df_sel.index.dayofweek, df_sel.index.hour])["pm25"].mean().unstack()
     fig_hm = go.Figure(go.Heatmap(
@@ -861,6 +937,15 @@ elif page == "Historique & Tendances":
     sec("06", "Distribution globale du PM2.5")
     st.caption("Distribution fortement asymétrique à droite : majorité < 100 µg/m³, mais une longue queue reflète des épisodes extrêmes pouvant dépasser 500 µg/m³.")
 
+    # ── Graphique 6 : Distribution globale du PM2.5 ──────────────────────
+    # Histogramme avec 80 intervalles couvrant [0, max_PM2.5].
+    # Deux marqueurs verticaux sont ajoutés :
+    #   - Ligne rouge en tirets = moyenne arithmétique (sensible aux valeurs extrêmes)
+    #   - Ligne verte en pointillés = médiane (robuste aux outliers)
+    # L'écart entre les deux confirme l'asymétrie droite (skewness > 0) :
+    # la longue queue vers les valeurs élevées tire la moyenne vers le haut
+    # par rapport à la médiane. Cela justifie l'utilisation du log dans le
+    # feature engineering (transformation log-normale pour normaliser la cible).
     fig_hist = px.histogram(df_sel, x="pm25", nbins=80,
         color_discrete_sequence=["#0EA5E9"],
         labels={"pm25":"PM2.5 (µg/m³)", "count":"Nombre d'heures"},
@@ -884,6 +969,15 @@ elif page == "Historique & Tendances":
     sec("07", "Évolution annuelle — Distributions comparées")
     st.caption("Comparaison de la distribution du PM2.5 par année pour identifier les tendances à moyen terme.")
 
+    # ── Graphique 7 : Violin plot par année ──────────────────────────────
+    # Le violin plot combine deux représentations en une seule :
+    #   - Largeur de la "violone" = densité de probabilité (KDE) : là où la
+    #     violone est large, les valeurs sont fréquentes.
+    #   - Boxplot intégré (box=True) : médiane, Q1–Q3, moustaches.
+    # C'est plus riche qu'un boxplot seul car il révèle la bimodalité ou
+    # les distributions multimodales (ex : deux régimes de pollution distincts).
+    # points=False : on masque les observations individuelles pour alléger
+    # l'affichage (43 824 points rendraient le graphique illisible).
     df_sel["annee"] = df_sel.index.year.astype(str)
     fig_yr = px.violin(df_sel, x="annee", y="pm25", color="annee",
         box=True, points=False,
@@ -905,6 +999,16 @@ elif page == "Historique & Tendances":
     sec("08", "PM2.5 selon la direction du vent")
     st.caption("La direction du vent influence fortement la concentration en PM2.5 : certaines directions apportent de l'air pollué depuis des zones industrielles.")
 
+    # ── Graphique 8 : PM2.5 moyen par direction de vent ─────────────────
+    # Barres simples : moyenne du PM2.5 regroupée par la variable catégorielle
+    # "cbwd" (cardinal wind direction : NE, NW, SE, cv = calme/variable).
+    # La direction du vent détermine la provenance de la masse d'air :
+    #   - NW (Nord-Ouest) = air venant des zones industrielles et de la Mongolie
+    #     → souvent associé à des PM2.5 élevés en hiver (feux de charbon)
+    #   - SE (Sud-Est)    = air marin ou agricole → généralement plus propre
+    #   - cv (calme)      = pas de vent dominant → accumulation locale des polluants
+    # Conditionnel "if cbwd in columns" : protège contre les versions du CSV
+    # qui n'auraient pas encodé cette colonne.
     if "cbwd" in df_sel.columns:
         vent_group = df_sel.groupby("cbwd")["pm25"].mean().reset_index()
         vent_group.columns = ["Direction","PM2.5 moyen"]
@@ -995,7 +1099,13 @@ elif page == "Performances du modèle":
 
     c1, c2 = st.columns(2)
     with c1:
-        # Barres groupées RMSE & MAE
+        # ── Graphique Perf 2a : RMSE & MAE groupés par modèle ────────────
+        # Pour chaque métrique (RMSE et MAE), on trace 4 barres côte à côte
+        # (une par modèle). La couleur distingue les modèles ; le texte en haut
+        # de chaque barre affiche la valeur exacte pour faciliter la comparaison.
+        # Règle de lecture : la barre la plus COURTE = le meilleur modèle.
+        # RMSE pénalise davantage les grosses erreurs (carré de l'écart)
+        # tandis que MAE est une erreur moyenne directement interprétable en µg/m³.
         fig_bars = go.Figure()
         cols_list = list(PALETTE_MODELS.values())
         for i, row in DF_MODELS.iterrows():
@@ -1017,7 +1127,15 @@ elif page == "Performances du modèle":
         st.plotly_chart(fig_bars, use_container_width=True)
 
     with c2:
-        # R² barres horizontales
+        # ── Graphique Perf 2b : R² par modèle (barres horizontales) ──────
+        # Barres horizontales : plus adaptées aux étiquettes de modèles (longues).
+        # L'axe X est restreint à [0.50, 0.62] volontairement pour amplifier
+        # les différences entre modèles (elles seraient invisibles sur [0, 1]).
+        # Rappel :
+        #   R² = 1   → prédiction parfaite (chaque point sur la diagonale)
+        #   R² = 0   → le modèle ne fait pas mieux que prédire la moyenne
+        #   R² < 0   → le modèle est pire que la moyenne (ne s'applique pas ici)
+        # La barre la plus longue = le meilleur modèle.
         fig_r2 = go.Figure(go.Bar(
             x=DF_MODELS["R²"], y=DF_MODELS["Modèle"], orientation="h",
             marker_color=cols_list,
@@ -1042,6 +1160,12 @@ elif page == "Performances du modèle":
         "distributions à queue épaisse."
     )
 
+    # ── Simulation du nuage Prédit vs Réel ──────────────────────────────
+    # En l'absence du jeu de test original dans l'app, on simule un nuage
+    # cohérent avec les métriques réelles (RMSE, MAE, mean, std) extraites
+    # de model_stats.json. La distribution log-normale reflète la réalité
+    # du PM2.5 (asymétrie droite). Le bruit gaussien est calibré sur le RMSE.
+    # Ce graphique est INDICATIF — il illustre la qualité typique du modèle.
     np.random.seed(42)
     n = 800
     y_real = np.abs(np.random.lognormal(np.log(stats["mean_pm25"]), 0.7, n))
@@ -1051,6 +1175,13 @@ elif page == "Performances du modèle":
 
     c3, c4 = st.columns(2)
     with c3:
+        # ── Graphique Perf 3a : Prédit vs Réel ────────────────────────────
+        # La diagonale rouge (y = x) représente la prédiction parfaite.
+        # Les points proches de la diagonale = bonnes prédictions.
+        # Les points au-dessus = surestimation (modèle prédit plus que la réalité).
+        # Les points en dessous = sous-estimation (fréquent pour les pics extrêmes).
+        # La dispersion horizontale reflète le RMSE : plus les points sont
+        # éloignés de la diagonale, plus l'erreur est grande.
         lim = max(y_real.max(), y_pred.max()) + 10
         fig_pv = go.Figure()
         fig_pv.add_trace(go.Scatter(x=y_real, y=y_pred, mode="markers",
@@ -1067,6 +1198,14 @@ elif page == "Performances du modèle":
         st.plotly_chart(fig_pv, use_container_width=True)
 
     with c4:
+        # ── Graphique Perf 3b : Distribution des résidus ─────────────────
+        # Résidu = Prédit − Réel pour chaque observation.
+        #   - Résidu > 0 : surestimation (modèle prédit une pollution plus haute)
+        #   - Résidu < 0 : sous-estimation (modèle prédit une pollution plus basse)
+        # Un bon modèle a des résidus centrés en 0 (pas de biais systématique)
+        # et suivant une distribution proche de la normale (forme en cloche).
+        # La ligne rouge en tirets marque le biais nul (idéal).
+        # Si l'histogramme est décalé à droite → biais positif (surestimation globale).
         residus = y_pred - y_real
         fig_res = px.histogram(x=residus, nbins=50,
             color_discrete_sequence=["#A78BFA"],
@@ -1093,7 +1232,17 @@ elif page == "Performances du modèle":
         "pour anticiper les retournements de tendance."
     )
 
-    # Top 20 features (valeurs issues de l'analyse LightGBM du notebook)
+    # ── Graphique Perf 4 : Importance des features LightGBM ─────────────
+    # L'importance est calculée par LightGBM comme le "gain total" apporté
+    # par chaque feature à travers tous les arbres : plus une variable est
+    # utilisée pour des splits qui réduisent l'erreur, plus son importance est haute.
+    # Couleurs par catégorie :
+    #   Vert  (Pollution passée)   = lags et rolling means du PM2.5
+    #   Bleu  (Pression/Humidité)  = PRES, DEWP et leur produit croisé
+    #   Jaune (Vent)               = Iws et sa moyenne glissante
+    #   Orange (Température)       = TEMP et ses dérivés
+    #   Violet (Temporelle)        = month, dayofweek, saison
+    # Valeurs issues directement du notebook d'entraînement LightGBM.
     feat_names = [
         "pm25_roll_3h","pm25_lag_1h","pm25_roll_12h","pm25_lag_6h",
         "pm25_roll_24h","PRES","pm25_lag_24h","DEWP",
@@ -1124,6 +1273,11 @@ elif page == "Performances du modèle":
     categories = [get_cat(f) for f in feat_names]
     bar_colors  = [cat_colors[c] for c in categories]
 
+    # Barres horizontales d'importance des features (ordre décroissant, bas → haut).
+    # Couleurs par catégorie : vert = variables de pollution passée,
+    # bleu = pression/humidité, orange = vent, rouge = température, violet = temporel.
+    # L'importance LightGBM mesure le gain total d'information apporté par chaque feature
+    # sur l'ensemble des arbres (somme normalisée à 1).
     fig_fi = go.Figure(go.Bar(
         x=importances[::-1], y=feat_names[::-1], orientation="h",
         marker_color=bar_colors[::-1],
@@ -1350,7 +1504,7 @@ elif page == "À propos du projet":
         <div>
             <div class="av-name">Abdoul Fataho NIAMPA</div>
             <div class="av-role">Data Scientist · Projet Smart City Beijing</div>
-            <a class="av-link" href="https://archive.ics.uci.edu/ml/machine-learning-databases/00381/PRSA_data_2010.1.1-2014.12.31.csv" target="_blank">
+            <a class="av-link" href="https://archive.ics.uci.edu/ml/machine-learning-databases/00381" target="_blank">
                 Source des données — UCI ML Repository →
             </a>
         </div>
