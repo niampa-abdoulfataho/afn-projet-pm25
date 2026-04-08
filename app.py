@@ -1,7 +1,7 @@
 """
 Smart City — Prévision PM2.5 Beijing
 =====================================
-Application Streamlit pour la prédiction du niveau
+Application Streamlit professionnelle pour la prédiction du niveau
 de particules fines PM2.5 à Beijing à horizon J+1.
 
 Modèle retenu : LightGBM (meilleur parmi 4 modèles testés)
@@ -311,12 +311,17 @@ def sec(num, title):
     )
 
 def plotly_theme():
+    """Retourne uniquement les paramètres de fond et police communs.
+    Ne pas inclure xaxis/yaxis ici pour éviter les conflits de clés
+    dans update_layout lorsque ces axes sont aussi définis explicitement."""
     return dict(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="white",
         font=dict(family="Sora"),
-        yaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
-        xaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
     )
+
+# Grille standard réutilisable pour les axes
+GRID = dict(showgrid=True, gridcolor="#F1F5F9")
 
 # ─────────────────────────────────────────────────────────────
 # SIDEBAR
@@ -544,6 +549,79 @@ if page == "Accueil & Prédiction":
 
         st.info(f"**Recommandation :** {conseil}")
 
+        # ── Graphique : facteurs influençant cette prédiction ──────────
+        sec("03", "Facteurs influençant cette prédiction")
+        st.caption(
+            "Contribution approximative de chaque groupe de variables à la prédiction. "
+            "Rouge = facteur qui aggrave la pollution par rapport à la moyenne historique, "
+            "vert = facteur favorable."
+        )
+
+        # Valeurs de référence historiques (moyennes dataset 2010-2014)
+        mean_ref = {
+            "pm25_lag_1h": 97.0, "pm25_roll_3h": 97.0, "pm25_lag_6h": 97.0,
+            "pm25_roll_12h": 97.0, "pm25_lag_24h": 97.0,
+            "Iws": 23.0, "TEMP": 12.0, "PRES": 1016.0, "DEWP": -1.0,
+            "Ir": 0.2, "Is": 0.1,
+        }
+        # Groupes de features avec leur importance LightGBM
+        influence_groups = {
+            "PM2.5 récent (lags)": [
+                ("pm25_lag_1h",   pm25_lag_1h,   0.152),
+                ("pm25_roll_3h",  pm25_roll_3h,  0.168),
+                ("pm25_lag_6h",   pm25_lag_6h,   0.099),
+                ("pm25_roll_12h", pm25_roll_12h, 0.121),
+                ("pm25_lag_24h",  pm25_lag_24h,  0.051),
+            ],
+            "Vent": [
+                ("Iws", Iws, 0.028),
+            ],
+            "Température": [
+                ("TEMP", TEMP, 0.020),
+            ],
+            "Pression & Humidité": [
+                ("PRES", PRES, 0.058),
+                ("DEWP", DEWP, 0.041),
+            ],
+            "Précipitations": [
+                ("Ir", Ir, 0.010),
+                ("Is", Is, 0.008),
+            ],
+        }
+        # Score = somme(importance × écart normalisé à la moyenne)
+        group_scores = {}
+        for grp, items in influence_groups.items():
+            score = 0.0
+            for feat, val, imp in items:
+                ref = mean_ref.get(feat, 0)
+                score += imp * (val - ref) / (abs(ref) + 1)
+            group_scores[grp] = round(score, 4)
+
+        g_labels = list(group_scores.keys())
+        g_values = list(group_scores.values())
+        fig_inf = go.Figure(go.Bar(
+            x=g_values, y=g_labels, orientation="h",
+            marker=dict(
+                color=["#EF4444" if v > 0 else "#10B981" for v in g_values],
+                line=dict(width=0),
+            ),
+            text=[f"{'+' if v > 0 else ''}{v:.3f}" for v in g_values],
+            textposition="outside",
+        ))
+        fig_inf.add_vline(x=0, line_color="#1E293B", line_width=1.5)
+        fig_inf.update_layout(
+            height=260,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+            font=dict(family="Sora"),
+            xaxis=dict(
+                title="Contribution relative (rouge = aggrave, vert = améliore)",
+                showgrid=True, gridcolor="#F1F5F9",
+            ),
+            yaxis=dict(showgrid=False, tickfont=dict(size=12)),
+            margin=dict(t=20, b=50, l=180, r=80),
+        )
+        st.plotly_chart(fig_inf, use_container_width=True)
+
     # Grille des seuils
     st.markdown("---")
     sec("03", "Grille de référence — Seuils PM2.5")
@@ -632,7 +710,9 @@ elif page == "Historique & Tendances":
                      annotation_text="Seuil dangereux (150 µg/m³)", annotation_font_color="#EF4444")
     fig_ts.add_hline(y=25,  line_dash="dot",  line_color="#10B981", line_width=1.5,
                      annotation_text="Seuil OMS (25 µg/m³)", annotation_font_color="#10B981")
-    fig_ts.update_layout(height=350, **plotly_theme(),
+    fig_ts.update_layout(
+        height=350,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
         legend=dict(orientation="h", y=1.08, font=dict(size=12)),
         xaxis=dict(title="", showgrid=True, gridcolor="#F1F5F9"),
         yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
@@ -653,8 +733,10 @@ elif page == "Historique & Tendances":
             marker=dict(color=monthly.values, colorscale="RdYlGn_r", showscale=False, line=dict(width=0)),
             text=[f"{v:.0f}" for v in monthly.values], textposition="outside",
         ))
-        fig_m.update_layout(title=dict(text="PM2.5 moyen par mois", font=dict(size=14)),
-            height=340, **plotly_theme(),
+        fig_m.update_layout(
+            title=dict(text="PM2.5 moyen par mois", font=dict(size=14)),
+            height=340,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             yaxis=dict(title="µg/m³", showgrid=True, gridcolor="#F1F5F9"),
             xaxis=dict(showgrid=False), margin=dict(t=50,b=20,l=50,r=20))
         st.plotly_chart(fig_m, use_container_width=True)
@@ -664,7 +746,9 @@ elif page == "Historique & Tendances":
             category_orders={"saison":["Hiver","Printemps","Été","Automne"]},
             color_discrete_map=PALETTE_SAISONS, title="Distribution PM2.5 par saison")
         fig_box.update_traces(showlegend=False)
-        fig_box.update_layout(height=340, **plotly_theme(),
+        fig_box.update_layout(
+            height=340,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
             xaxis=dict(title="", showgrid=False), margin=dict(t=50,b=20,l=50,r=20))
         st.plotly_chart(fig_box, use_container_width=True)
@@ -682,7 +766,9 @@ elif page == "Historique & Tendances":
         fill="tozeroy", fillcolor="rgba(14,165,233,0.07)",
         mode="lines+markers", line=dict(color="#0EA5E9", width=2.5),
         marker=dict(size=6, color="#0EA5E9")))
-    fig_h.update_layout(height=300, **plotly_theme(),
+    fig_h.update_layout(
+        height=300,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
         xaxis=dict(title="Heure", tickvals=list(range(0,24,2)),
                    ticktext=[f"{h}h" for h in range(0,24,2)], showgrid=True, gridcolor="#F1F5F9"),
         yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
@@ -702,14 +788,24 @@ elif page == "Historique & Tendances":
             color_discrete_sequence=["#60A5FA"], trendline_color_override="#EF4444",
             title="PM2.5 vs Vitesse du vent",
             labels={"Iws":"Vitesse du vent (m/s)", "pm25":"PM2.5 (µg/m³)"})
-        fig_w.update_layout(height=320, **plotly_theme(), margin=dict(t=50,b=30,l=50,r=20))
+        fig_w.update_layout(
+            height=320,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
+            xaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
+            yaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
+            margin=dict(t=50,b=30,l=50,r=20))
         st.plotly_chart(fig_w, use_container_width=True)
     with c4:
         fig_t = px.scatter(df_s, x="TEMP", y="pm25", opacity=0.25, trendline="lowess",
             color_discrete_sequence=["#F59E0B"], trendline_color_override="#EF4444",
             title="PM2.5 vs Température",
             labels={"TEMP":"Température (°C)", "pm25":"PM2.5 (µg/m³)"})
-        fig_t.update_layout(height=320, **plotly_theme(), margin=dict(t=50,b=30,l=50,r=20))
+        fig_t.update_layout(
+            height=320,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
+            xaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
+            yaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
+            margin=dict(t=50,b=30,l=50,r=20))
         st.plotly_chart(fig_t, use_container_width=True)
 
     st.markdown("---")
@@ -744,8 +840,12 @@ elif page == "Historique & Tendances":
         annotation_text=f"Moy. = {df_sel['pm25'].mean():.0f}", annotation_font_color="#EF4444")
     fig_hist.add_vline(x=df_sel["pm25"].median(), line_dash="dot", line_color="#10B981",
         annotation_text=f"Méd. = {df_sel['pm25'].median():.0f}", annotation_font_color="#10B981")
-    fig_hist.update_layout(height=310, **plotly_theme(),
-        title=dict(font=dict(size=14)), yaxis=dict(title="Nombre d'heures"),
+    fig_hist.update_layout(
+        height=310,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
+        title=dict(font=dict(size=14)),
+        xaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
+        yaxis=dict(title="Nombre d'heures", showgrid=True, gridcolor="#F1F5F9"),
         margin=dict(t=50,b=40,l=60,r=20))
     st.plotly_chart(fig_hist, use_container_width=True)
 
@@ -761,9 +861,13 @@ elif page == "Historique & Tendances":
         color_discrete_sequence=px.colors.qualitative.Pastel,
         labels={"annee":"Année","pm25":"PM2.5 (µg/m³)"},
         title="Distribution annuelle du PM2.5")
-    fig_yr.update_layout(height=340, **plotly_theme(),
+    fig_yr.update_layout(
+        height=340,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
         title=dict(font=dict(size=14)), showlegend=False,
-        xaxis=dict(showgrid=False), margin=dict(t=50,b=30,l=60,r=20))
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
+        margin=dict(t=50,b=30,l=60,r=20))
     st.plotly_chart(fig_yr, use_container_width=True)
 
     st.markdown("---")
@@ -781,7 +885,9 @@ elif page == "Historique & Tendances":
                         line=dict(width=0)),
             text=[f"{v:.0f}" for v in vent_group["PM2.5 moyen"]], textposition="outside",
         ))
-        fig_v.update_layout(height=300, **plotly_theme(),
+        fig_v.update_layout(
+            height=300,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             title=dict(text="PM2.5 moyen par direction de vent", font=dict(size=14)),
             yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
             xaxis=dict(showgrid=False, title="Direction du vent"),
@@ -873,7 +979,8 @@ elif page == "Performances du modèle":
             ))
         fig_bars.update_layout(
             title=dict(text="RMSE & MAE — comparaison des 4 modèles", font=dict(size=14)),
-            barmode="group", height=350, **plotly_theme(),
+            barmode="group", height=350,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             yaxis=dict(title="µg/m³", showgrid=True, gridcolor="#F1F5F9"),
             xaxis=dict(showgrid=False),
             legend=dict(orientation="h", y=-0.22, font=dict(size=12)),
@@ -889,7 +996,8 @@ elif page == "Performances du modèle":
         ))
         fig_r2.update_layout(
             title=dict(text="Coefficient de détermination R²", font=dict(size=14)),
-            height=350, **plotly_theme(),
+            height=350,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             xaxis=dict(title="R²", range=[0.50, 0.62], showgrid=True, gridcolor="#F1F5F9"),
             yaxis=dict(showgrid=False),
             margin=dict(t=50,b=30,l=140,r=70))
@@ -920,7 +1028,9 @@ elif page == "Performances du modèle":
             marker=dict(size=5, color="#0EA5E9", opacity=0.4), name="Observations"))
         fig_pv.add_trace(go.Scatter(x=[0, lim], y=[0, lim], mode="lines",
             line=dict(color="#EF4444", dash="dash", width=1.5), name="Parfait"))
-        fig_pv.update_layout(height=340, **plotly_theme(),
+        fig_pv.update_layout(
+            height=340,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             title=dict(text="Prédit vs Réel — jeu de test 2014", font=dict(size=14)),
             xaxis=dict(title="PM2.5 réel (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
             yaxis=dict(title="PM2.5 prédit (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
@@ -935,8 +1045,11 @@ elif page == "Performances du modèle":
             title="Distribution des résidus (Prédit − Réel)")
         fig_res.add_vline(x=0, line_dash="dash", line_color="#EF4444",
             annotation_text="Biais nul", annotation_font_color="#EF4444")
-        fig_res.update_layout(height=340, **plotly_theme(),
+        fig_res.update_layout(
+            height=340,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             title=dict(font=dict(size=14)),
+            xaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
             yaxis=dict(title="Fréquence", showgrid=True, gridcolor="#F1F5F9"),
             margin=dict(t=50,b=50,l=60,r=20))
         st.plotly_chart(fig_res, use_container_width=True)
@@ -993,7 +1106,8 @@ elif page == "Performances du modèle":
                                 name=cat, marker_color=col))
     fig_fi.update_layout(
         title=dict(text="Top 20 features — Importance relative (LightGBM)", font=dict(size=14)),
-        height=500, **plotly_theme(),
+        height=500,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
         xaxis=dict(title="Importance relative", showgrid=True, gridcolor="#F1F5F9"),
         yaxis=dict(tickfont=dict(family="IBM Plex Mono", size=11), showgrid=False),
         legend=dict(orientation="h", y=-0.1, font=dict(size=12)),
