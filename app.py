@@ -1301,11 +1301,11 @@ elif page == "Performances du modèle":
 
     # Interprétation des métriques
     st.info(
-        f"**R² = {stats['r2']:.3f}** — Le modèle LightGBM explique "
+        f"**R² = {stats['r2']:.3f}** : Le modèle LightGBM explique "
         f"**{stats['r2']*100:.1f}%** de la variance du PM2.5 journalier. "
         f"Ce résultat est cohérent avec la littérature scientifique pour "
         f"ce type de prévision atmosphérique à 24h.  \n\n"
-        f"**MAE = {stats['mae']:.2f} µg/m³** — L'erreur absolue moyenne "
+        f"**MAE = {stats['mae']:.2f} µg/m³** : L'erreur absolue moyenne "
         f"représente environ {stats['mae']/stats['mean_pm25']*100:.0f}% "
         f"de la valeur historique moyenne ({stats['mean_pm25']:.0f} µg/m³), "
         f"ce qui est suffisant pour déclencher des alertes sanitaires de manière fiable."
@@ -1462,9 +1462,9 @@ elif page == "À propos du projet":
                 border:1px solid #E2E8F0;font-family:'Sora',sans-serif;">
         <div style="font-size:13px;font-weight:600;color:#1E293B;margin-bottom:12px;">Pourquoi LightGBM ?</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px;color:#475569;line-height:1.7;">
-            <div><strong style="color:#10B981;">Meilleur RMSE ({stats['rmse']:.2f})</strong> — Minimise les grandes
+            <div><strong style="color:#10B981;">Meilleur RMSE ({stats['rmse']:.2f})</strong> : Minimise les grandes
             erreurs de prédiction, critiques pour déclencher des alertes sanitaires au bon moment.</div>
-            <div><strong style="color:#10B981;">Meilleur R² ({stats['r2']:.3f})</strong> — Capture mieux la variance
+            <div><strong style="color:#10B981;">Meilleur R² ({stats['r2']:.3f})</strong> : Capture mieux la variance
             grâce à la croissance en feuilles (leaf-wise) et aux 300 estimateurs optimisés par TimeSeriesCV.</div>
         </div>
     </div>
@@ -1504,7 +1504,7 @@ elif page == "À propos du projet":
         <div>
             <div class="av-name">Abdoul Fataho NIAMPA</div>
             <div class="av-role">Data Scientist · Projet Smart City Beijing</div>
-            <a class="av-link" href="https://archive.ics.uci.edu/ml/machine-learning-databases/00381" target="_blank">
+            <a class="av-link" href="https://archive.ics.uci.edu/ml/machine-learning-databases/00381/PRSA_data_2010.1.1-2014.12.31.csv" target="_blank">
                 Source des données — UCI ML Repository →
             </a>
         </div>
