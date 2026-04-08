@@ -28,7 +28,7 @@ afn-projet-pm25/
 ├── features.json             # Liste ordonnée des 39 features du modèle
 ├── model_stats.json          # Métriques de performance (RMSE, MAE, R², moyenne PM2.5)
 ├── beijing_features.csv      # Dataset historique enrichi (optionnel — données synthétiques si absent)
-│
+├── Africa TechUp Tour 2025.docx  # Rapport
 ├── Projet_Fil_Conducteur_Abdoul_Fataho_NIAMPA.ipynb   # Notebook d'entraînement complet
 ├── requirements.txt          # Dépendances Python
 └── README.md                 # Ce fichier
@@ -41,7 +41,7 @@ afn-projet-pm25/
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/<votre-username>/afn-projet-pm25.git
+git clone https://github.com/niampa-abdoulfataho/afn-projet-pm25.git
 cd afn-projet-pm25
 ```
 
@@ -113,7 +113,7 @@ L'application s'ouvre automatiquement sur `http://localhost:8501`.
 ## 📊 Dataset source
 
 - **Nom** : Beijing PM2.5 Data Set
-- **Source** : [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/Beijing+PM2.5+Data)
+- **Source** : [UCI Machine Learning Repository]("https://archive.ics.uci.edu/ml/machine-learning-databases/00381/PRSA_data_2010.1.1-2014.12.31.csv")
 - **Période** : 1er janvier 2010 — 31 décembre 2014
 - **Fréquence** : Horaire
 - **Observations** : 43 824
@@ -137,10 +137,3 @@ L'application s'ouvre automatiquement sur `http://localhost:8501`.
 - **Plotly** 5.18 — visualisations interactives
 - **Pandas / NumPy** — manipulation de données
 - **joblib** — sérialisation du modèle
-
----
-
-## 📄 Licence
-
-Projet académique — usage libre pour la recherche et l'enseignement.
-Données source : UCI ML Repository (domaine public).
