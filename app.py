@@ -293,12 +293,13 @@ PALETTE_MODELS  = {
     "LightGBM"           : "#10B981",
 }
 
-# Métriques exactes issues du notebook
+# Métriques comparatives (les 3 premières sont fixes ; LightGBM vient de stats[])
+# Elles sont définies après le chargement de stats pour être dynamiques
 DF_MODELS = pd.DataFrame({
     "Modèle" : ["Régression Linéaire","Random Forest","XGBoost","LightGBM"],
-    "RMSE"   : [52.13, 52.12, 52.83, 51.76],
-    "MAE"    : [39.17, 37.26, 37.91, 37.16],
-    "R²"     : [0.568, 0.568, 0.557, 0.574],
+    "RMSE"   : [52.13, 52.12, 52.83, stats["rmse"]],
+    "MAE"    : [39.17, 37.26, 37.91, stats["mae"]],
+    "R²"     : [0.568, 0.568, 0.557, stats["r2"]],
 })
 
 # Helpers CSS
@@ -784,28 +785,56 @@ elif page == "Historique & Tendances":
     df_s = df_sel.sample(min(3000, len(df_sel)), random_state=42)
     c3, c4 = st.columns(2)
     with c3:
-        fig_w = px.scatter(df_s, x="Iws", y="pm25", opacity=0.25, trendline="lowess",
-            color_discrete_sequence=["#60A5FA"], trendline_color_override="#EF4444",
-            title="PM2.5 vs Vitesse du vent",
-            labels={"Iws":"Vitesse du vent (m/s)", "pm25":"PM2.5 (µg/m³)"})
+        # Tendance calculée par binning + médiane (évite la dépendance statsmodels)
+        iws_bins  = pd.cut(df_s["Iws"], bins=20)
+        iws_trend = df_s.groupby(iws_bins, observed=True)["pm25"].median().reset_index()
+        iws_trend["Iws_mid"] = iws_trend["Iws"].apply(lambda x: x.mid)
+
+        fig_w = go.Figure()
+        fig_w.add_trace(go.Scatter(
+            x=df_s["Iws"], y=df_s["pm25"], mode="markers",
+            marker=dict(color="#60A5FA", size=4, opacity=0.25),
+            name="Observations",
+        ))
+        fig_w.add_trace(go.Scatter(
+            x=iws_trend["Iws_mid"], y=iws_trend["pm25"], mode="lines",
+            line=dict(color="#EF4444", width=2.5),
+            name="Tendance (médiane par bin)",
+        ))
         fig_w.update_layout(
+            title=dict(text="PM2.5 vs Vitesse du vent", font=dict(size=14)),
             height=320,
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
-            xaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
-            yaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
-            margin=dict(t=50,b=30,l=50,r=20))
+            xaxis=dict(title="Vitesse du vent (m/s)", showgrid=True, gridcolor="#F1F5F9"),
+            yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
+            legend=dict(orientation="h", y=1.08, font=dict(size=11)),
+            margin=dict(t=50,b=30,l=60,r=20))
         st.plotly_chart(fig_w, use_container_width=True)
+
     with c4:
-        fig_t = px.scatter(df_s, x="TEMP", y="pm25", opacity=0.25, trendline="lowess",
-            color_discrete_sequence=["#F59E0B"], trendline_color_override="#EF4444",
-            title="PM2.5 vs Température",
-            labels={"TEMP":"Température (°C)", "pm25":"PM2.5 (µg/m³)"})
+        temp_bins  = pd.cut(df_s["TEMP"], bins=20)
+        temp_trend = df_s.groupby(temp_bins, observed=True)["pm25"].median().reset_index()
+        temp_trend["TEMP_mid"] = temp_trend["TEMP"].apply(lambda x: x.mid)
+
+        fig_t = go.Figure()
+        fig_t.add_trace(go.Scatter(
+            x=df_s["TEMP"], y=df_s["pm25"], mode="markers",
+            marker=dict(color="#F59E0B", size=4, opacity=0.25),
+            name="Observations",
+        ))
+        fig_t.add_trace(go.Scatter(
+            x=temp_trend["TEMP_mid"], y=temp_trend["pm25"], mode="lines",
+            line=dict(color="#EF4444", width=2.5),
+            name="Tendance (médiane par bin)",
+        ))
         fig_t.update_layout(
+            title=dict(text="PM2.5 vs Température", font=dict(size=14)),
             height=320,
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
-            xaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
-            yaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
-            margin=dict(t=50,b=30,l=50,r=20))
+            xaxis=dict(title="Température (°C)", showgrid=True, gridcolor="#F1F5F9"),
+            yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
+            legend=dict(orientation="h", y=1.08, font=dict(size=11)),
+            margin=dict(t=50,b=30,l=60,r=20))
         st.plotly_chart(fig_t, use_container_width=True)
 
     st.markdown("---")
@@ -946,9 +975,9 @@ elif page == "Performances du modèle":
             </tr>
             <tr class="best">
                 <td>LightGBM<span class="b-best">Retenu</span></td>
-                <td style="color:#10B981;"><strong>51.76</strong></td>
-                <td style="color:#10B981;"><strong>37.16</strong></td>
-                <td style="color:#10B981;"><strong>0.574</strong></td>
+                <td style="color:#10B981;"><strong>{stats['rmse']:.2f}</strong></td>
+                <td style="color:#10B981;"><strong>{stats['mae']:.2f}</strong></td>
+                <td style="color:#10B981;"><strong>{stats['r2']:.3f}</strong></td>
                 <td><span class="b-best">Production</span></td>
             </tr>
         </tbody>
@@ -1268,9 +1297,9 @@ elif page == "À propos du projet":
             <tr><td>XGBoost</td><td>52.83</td><td>37.91</td><td>0.557</td><td>+1.3%</td></tr>
             <tr class="best">
                 <td>LightGBM <span class="b-best">Retenu</span></td>
-                <td style="color:#10B981;"><strong>51.76</strong></td>
-                <td style="color:#10B981;"><strong>37.16</strong></td>
-                <td style="color:#10B981;"><strong>0.574</strong></td>
+                <td style="color:#10B981;"><strong>{stats['rmse']:.2f}</strong></td>
+                <td style="color:#10B981;"><strong>{stats['mae']:.2f}</strong></td>
+                <td style="color:#10B981;"><strong>{stats['r2']:.3f}</strong></td>
                 <td style="color:#10B981;"><strong>−0.71%</strong></td>
             </tr>
         </tbody>
@@ -1279,9 +1308,9 @@ elif page == "À propos du projet":
                 border:1px solid #E2E8F0;font-family:'Sora',sans-serif;">
         <div style="font-size:13px;font-weight:600;color:#1E293B;margin-bottom:12px;">Pourquoi LightGBM ?</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px;color:#475569;line-height:1.7;">
-            <div><strong style="color:#10B981;">Meilleur RMSE (51.76)</strong> — Minimise les grandes
+            <div><strong style="color:#10B981;">Meilleur RMSE ({stats['rmse']:.2f})</strong> — Minimise les grandes
             erreurs de prédiction, critiques pour déclencher des alertes sanitaires au bon moment.</div>
-            <div><strong style="color:#10B981;">Meilleur R² (0.574)</strong> — Capture mieux la variance
+            <div><strong style="color:#10B981;">Meilleur R² ({stats['r2']:.3f})</strong> — Capture mieux la variance
             grâce à la croissance en feuilles (leaf-wise) et aux 300 estimateurs optimisés par TimeSeriesCV.</div>
         </div>
     </div>
@@ -1321,7 +1350,7 @@ elif page == "À propos du projet":
         <div>
             <div class="av-name">Abdoul Fataho NIAMPA</div>
             <div class="av-role">Data Scientist · Projet Smart City Beijing</div>
-            <a class="av-link" href="https://archive.ics.uci.edu/ml/datasets/Beijing+PM2.5+Data" target="_blank">
+            <a class="av-link" href="https://archive.ics.uci.edu/ml/machine-learning-databases/00381/PRSA_data_2010.1.1-2014.12.31.csv" target="_blank">
                 Source des données — UCI ML Repository →
             </a>
         </div>
