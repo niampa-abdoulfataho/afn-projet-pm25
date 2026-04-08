@@ -65,8 +65,9 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-L'application s'ouvre automatiquement sur `http://localhost:8501`.
-
+L'application s'ouvre automatiquement sur `http://localhost:8501`.\
+Vous pouvez y accéder directement via le lien suivant :\
+[https://afn-projet-pm25-cybkwjc2tszedlupcrxpog.streamlit.app](https://afn-projet-pm25-cybkwjc2tszedlupcrxpog.streamlit.app)
 ---
 
 ## 📱 Pages de l'application
