@@ -30,8 +30,7 @@ st.set_page_config(
 # ─────────────────────────────────────────────────────────────
 # CSS PERSONNALISÉ
 # ─────────────────────────────────────────────────────────────
-st.markdown(
-    """
+st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
@@ -253,10 +252,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
     background: #F1F5F9; border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px;
 }
 </style>
-""",
-    unsafe_allow_html=True,
-)
-
+""", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────
 # CHARGEMENT (mis en cache)
@@ -271,12 +267,10 @@ def load_model():
         stats = json.load(f)
     return model, features, stats
 
-
 @st.cache_data
 def load_data():
     """Charge le jeu de données historique Beijing PM2.5 (2010–2014)."""
     return pd.read_csv("beijing_features.csv", index_col=0, parse_dates=True)
-
 
 model, features, stats = load_model()
 df = load_data()
@@ -284,45 +278,19 @@ df = load_data()
 # ─────────────────────────────────────────────────────────────
 # CONSTANTES PARTAGÉES
 # ─────────────────────────────────────────────────────────────
-MOIS_FR = [
-    "Jan",
-    "Fév",
-    "Mar",
-    "Avr",
-    "Mai",
-    "Jun",
-    "Jul",
-    "Aoû",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Déc",
-]
+MOIS_FR = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"]
 SAISON_MAP = {
-    12: "Hiver",
-    1: "Hiver",
-    2: "Hiver",
-    3: "Printemps",
-    4: "Printemps",
-    5: "Printemps",
-    6: "Été",
-    7: "Été",
-    8: "Été",
-    9: "Automne",
-    10: "Automne",
-    11: "Automne",
+    12:"Hiver", 1:"Hiver", 2:"Hiver",
+    3:"Printemps", 4:"Printemps", 5:"Printemps",
+    6:"Été", 7:"Été", 8:"Été",
+    9:"Automne", 10:"Automne", 11:"Automne",
 }
-PALETTE_SAISONS = {
-    "Hiver": "#3B82F6",
-    "Printemps": "#22C55E",
-    "Été": "#F59E0B",
-    "Automne": "#F97316",
-}
-PALETTE_MODELS = {
+PALETTE_SAISONS = {"Hiver":"#3B82F6","Printemps":"#22C55E","Été":"#F59E0B","Automne":"#F97316"}
+PALETTE_MODELS  = {
     "Régression Linéaire": "#94A3B8",
-    "Random Forest": "#60A5FA",
-    "XGBoost": "#F472B6",
-    "LightGBM": "#10B981",
+    "Random Forest"      : "#60A5FA",
+    "XGBoost"            : "#F472B6",
+    "LightGBM"           : "#10B981",
 }
 
 # ── Tableau comparatif des 4 modèles entraînés sur le jeu test 2014 ──────────
@@ -333,18 +301,15 @@ PALETTE_MODELS = {
 #
 # Structure des listes : [Régression Linéaire, Random Forest, XGBoost, LightGBM]
 # → 4 modèles, 4 valeurs par colonne — format valide pour pd.DataFrame.
-DF_MODELS = pd.DataFrame(
-    {
-        "Modèle": ["Régression Linéaire", "Random Forest", "XGBoost", "LightGBM"],
-        # RMSE (Root Mean Squared Error) — pénalise davantage les grandes erreurs
-        "RMSE": [52.13, 52.12, 52.83, stats["rmse"]],
-        # MAE (Mean Absolute Error) — erreur moyenne directement interprétable en µg/m³
-        "MAE": [39.17, 37.26, 37.91, stats["mae"]],
-        # R² — proportion de variance du PM2.5 expliquée par le modèle (0=nul, 1=parfait)
-        "R²": [0.568, 0.568, 0.557, stats["r2"]],
-    }
-)
-
+DF_MODELS = pd.DataFrame({
+    "Modèle" : ["Régression Linéaire", "Random Forest", "XGBoost", "LightGBM"],
+    # RMSE (Root Mean Squared Error) — pénalise davantage les grandes erreurs
+    "RMSE"   : [52.13,        52.12,        52.83,        stats["rmse"]],
+    # MAE (Mean Absolute Error) — erreur moyenne directement interprétable en µg/m³
+    "MAE"    : [39.17,        37.26,        37.91,        stats["mae"]],
+    # R² — proportion de variance du PM2.5 expliquée par le modèle (0=nul, 1=parfait)
+    "R²"     : [0.568,        0.568,        0.557,        stats["r2"]],
+})
 
 # Helpers CSS
 def sec(num, title):
@@ -354,7 +319,6 @@ def sec(num, title):
         f'<div class="sec-line"></div></div>',
         unsafe_allow_html=True,
     )
-
 
 def plotly_theme():
     """Retourne uniquement les paramètres de fond et police communs.
@@ -366,15 +330,13 @@ def plotly_theme():
         font=dict(family="Sora"),
     )
 
-
 # Grille standard réutilisable pour les axes
 GRID = dict(showgrid=True, gridcolor="#F1F5F9")
 
 # ─────────────────────────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────────────────────────
-st.sidebar.markdown(
-    """
+st.sidebar.markdown("""
 <div class="sb-brand">
     <div class="sb-icon">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -392,41 +354,30 @@ st.sidebar.markdown(
 </div>
 <div class="sb-status"><div class="sb-dot"></div>Modèle actif</div>
 <div class="sb-section">Navigation</div>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 page = st.sidebar.radio(
-    "",
-    [
-        "Accueil & Prédiction",
-        "Historique & Tendances",
-        "Performances du modèle",
-        "📚 Guide des graphes",
-        "À propos du projet",
-    ],
+    "", ["Accueil & Prédiction","Historique & Tendances",
+         "Performances du modèle","À propos du projet"]
 )
 
-st.sidebar.markdown(
-    f"""
+st.sidebar.markdown(f"""
 <div class="sb-stats">
     <div class="sb-stats-title">LightGBM — Jeu test 2014</div>
-    <div class="sb-row"><span class="sb-lbl">RMSE</span><span class="sb-val">{stats["rmse"]:.2f} µg/m³</span></div>
-    <div class="sb-row"><span class="sb-lbl">MAE</span><span class="sb-val">{stats["mae"]:.2f} µg/m³</span></div>
-    <div class="sb-row"><span class="sb-lbl">R²</span><span class="sb-val">{stats["r2"]:.3f}</span></div>
-    <div class="sb-row"><span class="sb-lbl">nRMSE</span><span class="sb-val">{stats["rmse"] / stats["mean_pm25"] * 100:.1f} %</span></div>
+    <div class="sb-row"><span class="sb-lbl">RMSE</span><span class="sb-val">{stats['rmse']:.2f} µg/m³</span></div>
+    <div class="sb-row"><span class="sb-lbl">MAE</span><span class="sb-val">{stats['mae']:.2f} µg/m³</span></div>
+    <div class="sb-row"><span class="sb-lbl">R²</span><span class="sb-val">{stats['r2']:.3f}</span></div>
+    <div class="sb-row"><span class="sb-lbl">nRMSE</span><span class="sb-val">{stats['rmse']/stats['mean_pm25']*100:.1f} %</span></div>
 </div>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 
 # ═════════════════════════════════════════════════════════════
 # PAGE 1 — ACCUEIL & PRÉDICTION
 # ═════════════════════════════════════════════════════════════
 if page == "Accueil & Prédiction":
-    st.markdown(
-        """
+
+    st.markdown("""
     <div class="page-hero">
         <div class="hero-label">Projet Smart City · Beijing · 2010–2014</div>
         <div class="hero-title">Prévision de la pollution<br><span>PM2.5</span> à horizon 24 h</div>
@@ -438,18 +389,16 @@ if page == "Accueil & Prédiction":
             <div><div class="hero-meta-label">Modèle</div><div class="hero-meta-value">LightGBM</div></div>
             <div><div class="hero-meta-label">Entraînement</div><div class="hero-meta-value">2010 – 2013</div></div>
             <div><div class="hero-meta-label">Test</div><div class="hero-meta-value">2014 (split temporel strict)</div></div>
-            <div><div class="hero-meta-label">Variables</div><div class="hero-meta-value">32 features engineered</div></div>
+            <div><div class="hero-meta-label">Variables</div><div class="hero-meta-value">39 features engineered</div></div>
         </div>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Modèle retenu", "LightGBM")
-    c2.metric("RMSE (test)", f"{stats['rmse']:.2f} µg/m³")
-    c3.metric("MAE (test)", f"{stats['mae']:.2f} µg/m³")
-    c4.metric("R² (test)", f"{stats['r2']:.3f}")
+    c1.metric("Modèle retenu",  "LightGBM")
+    c2.metric("RMSE (test)",    f"{stats['rmse']:.2f} µg/m³")
+    c3.metric("MAE (test)",     f"{stats['mae']:.2f} µg/m³")
+    c4.metric("R² (test)",      f"{stats['r2']:.3f}")
 
     st.markdown("---")
     sec("01", "Paramètres d'entrée")
@@ -458,114 +407,84 @@ if page == "Accueil & Prédiction":
 
     with col1:
         st.markdown("**Pollution récente (µg/m³)**")
-        pm25_lag_1h = st.slider("PM2.5 il y a 1h", 0, 500, 75)
-        pm25_lag_6h = st.slider("PM2.5 il y a 6h", 0, 500, 78)
-        pm25_lag_12h = st.slider("PM2.5 il y a 12h", 0, 500, 80)
-        pm25_lag_24h = st.slider("PM2.5 il y a 24h", 0, 500, 82)
-        pm25_roll_3h = st.slider("Moyenne glissante 3h", 0, 500, 80)
+        pm25_lag_1h   = st.slider("PM2.5 il y a 1h",       0, 500, 75)
+        pm25_lag_6h   = st.slider("PM2.5 il y a 6h",       0, 500, 78)
+        pm25_lag_12h  = st.slider("PM2.5 il y a 12h",      0, 500, 80)
+        pm25_lag_24h  = st.slider("PM2.5 il y a 24h",      0, 500, 82)
+        pm25_roll_3h  = st.slider("Moyenne glissante 3h",  0, 500, 80)
         pm25_roll_12h = st.slider("Moyenne glissante 12h", 0, 500, 85)
         pm25_roll_24h = st.slider("Moyenne glissante 24h", 0, 500, 90)
 
     with col2:
         st.markdown("**Conditions météorologiques**")
-        TEMP = st.slider("Température (°C)", -30, 45, 10)
+        TEMP = st.slider("Température (°C)",             -30, 45,   10)
         PRES = st.slider("Pression atmosphérique (hPa)", 990, 1040, 1015)
-        DEWP = st.slider("Point de rosée (°C)", -40, 30, -5)
-        Iws = st.slider("Vitesse du vent (m/s)", 0, 200, 20)
-        Ir = st.slider("Cumul pluie (heures)", 0, 24, 0)
-        Is = st.slider("Cumul neige (heures)", 0, 24, 0)
+        DEWP = st.slider("Point de rosée (°C)",          -40, 30,   -5)
+        Iws  = st.slider("Vitesse du vent (m/s)",          0, 200,  20)
+        Ir   = st.slider("Cumul pluie (heures)",           0, 24,   0)
+        Is   = st.slider("Cumul neige (heures)",           0, 24,   0)
         is_rainy = int(Ir > 0)
 
     with col3:
         st.markdown("**Temporel & Direction du vent**")
-        month = st.selectbox("Mois", range(1, 13), format_func=lambda x: MOIS_FR[x - 1])
+        month = st.selectbox("Mois", range(1, 13),
+                             format_func=lambda x: MOIS_FR[x-1])
         dayofweek = st.selectbox(
-            "Jour de la semaine",
-            range(7),
-            format_func=lambda x: [
-                "Lundi",
-                "Mardi",
-                "Mercredi",
-                "Jeudi",
-                "Vendredi",
-                "Samedi",
-                "Dimanche",
-            ][x],
-        )
+            "Jour de la semaine", range(7),
+            format_func=lambda x: ["Lundi","Mardi","Mercredi","Jeudi",
+                                    "Vendredi","Samedi","Dimanche"][x])
         is_weekend = int(dayofweek >= 5)
-        wind_dir = st.selectbox("Direction du vent", ["NE", "NW", "SE", "cv"])
-        vent_speed = st.selectbox("Intensité du vent", ["calme", "modéré", "fort"])
+        wind_dir   = st.selectbox("Direction du vent", ["NE","NW","SE","cv"])
+        vent_speed = st.selectbox("Intensité du vent", ["calme","modéré","fort"])
 
     # Variables dérivées
     vp = (DEWP / 100) * 6.105 * np.exp(17.27 * TEMP / (237.7 + TEMP))
     temp_feels_like = TEMP + 0.33 * vp - 4.0
-    delta_temp = 0.0
+    delta_temp   = 0.0
     temp_roll_6h = float(TEMP)
-    iws_roll_6h = float(Iws)
-    temp_x_vent = TEMP * Iws
-    pres_x_dewp = PRES * DEWP
+    iws_roll_6h  = float(Iws)
+    temp_x_vent  = TEMP * Iws
+    pres_x_dewp  = PRES * DEWP
 
-    wind_dir_NW = int(wind_dir == "NW")
-    wind_dir_SE = int(wind_dir == "SE")
-    wind_dir_cv = int(wind_dir == "cv")
-    vent_modere = int(vent_speed == "modéré")
-    vent_fort = int(vent_speed == "fort")
+    wind_dir_NW  = int(wind_dir == "NW")
+    wind_dir_SE  = int(wind_dir == "SE")
+    wind_dir_cv  = int(wind_dir == "cv")
+    vent_modere  = int(vent_speed == "modéré")
+    vent_fort    = int(vent_speed == "fort")
 
-    saison = SAISON_MAP[month]
-    saison_Hiver = int(saison == "Hiver")
+    saison           = SAISON_MAP[month]
+    saison_Hiver     = int(saison == "Hiver")
     saison_Printemps = int(saison == "Printemps")
-    saison_Ete = int(saison == "Été")
+    saison_Ete       = int(saison == "Été")
 
     # Lags journaliers approxiés
-    pm25_lag_1d = pm25_lag_24h
-    pm25_lag_2d = pm25_lag_24h
-    pm25_lag_3d = pm25_lag_24h
-    pm25_lag_7d = pm25_lag_24h
-    pm25_roll_3d = pm25_roll_24h
-    pm25_roll_7d = pm25_roll_24h
+    pm25_lag_1d   = pm25_lag_24h
+    pm25_lag_2d   = pm25_lag_24h
+    pm25_lag_3d   = pm25_lag_24h
+    pm25_lag_7d   = pm25_lag_24h
+    pm25_roll_3d  = pm25_roll_24h
+    pm25_roll_7d  = pm25_roll_24h
     pm25_roll_14d = pm25_roll_24h
     pm25_delta_1d = pm25_lag_1h - pm25_lag_24h
 
     input_dict = {
-        "pm25_lag_1h": pm25_lag_1h,
-        "pm25_lag_6h": pm25_lag_6h,
-        "pm25_lag_12h": pm25_lag_12h,
-        "pm25_lag_24h": pm25_lag_24h,
-        "pm25_roll_3h": pm25_roll_3h,
-        "pm25_roll_12h": pm25_roll_12h,
-        "pm25_roll_24h": pm25_roll_24h,
-        "TEMP": TEMP,
-        "PRES": PRES,
-        "DEWP": DEWP,
-        "Iws": Iws,
-        "Is": Is,
-        "Ir": Ir,
-        "temp_feels_like": temp_feels_like,
-        "delta_temp": delta_temp,
-        "temp_roll_6h": temp_roll_6h,
-        "iws_roll_6h": iws_roll_6h,
-        "temp_x_vent": temp_x_vent,
-        "pres_x_dewp": pres_x_dewp,
-        "is_rainy": is_rainy,
-        "month": month,
-        "dayofweek": dayofweek,
-        "is_weekend": is_weekend,
-        "wind_dir_NW": wind_dir_NW,
-        "wind_dir_SE": wind_dir_SE,
-        "wind_dir_cv": wind_dir_cv,
-        "vent_modéré": vent_modere,
-        "vent_fort": vent_fort,
-        "saison_Hiver": saison_Hiver,
-        "saison_Printemps": saison_Printemps,
-        "saison_Été": saison_Ete,
-        "pm25_lag_1d": pm25_lag_1d,
-        "pm25_lag_2d": pm25_lag_2d,
-        "pm25_lag_3d": pm25_lag_3d,
-        "pm25_lag_7d": pm25_lag_7d,
-        "pm25_roll_3d": pm25_roll_3d,
-        "pm25_roll_7d": pm25_roll_7d,
-        "pm25_roll_14d": pm25_roll_14d,
-        "pm25_delta_1d": pm25_delta_1d,
+        "pm25_lag_1h":pm25_lag_1h,"pm25_lag_6h":pm25_lag_6h,
+        "pm25_lag_12h":pm25_lag_12h,"pm25_lag_24h":pm25_lag_24h,
+        "pm25_roll_3h":pm25_roll_3h,"pm25_roll_12h":pm25_roll_12h,
+        "pm25_roll_24h":pm25_roll_24h,"TEMP":TEMP,"PRES":PRES,"DEWP":DEWP,
+        "Iws":Iws,"Is":Is,"Ir":Ir,"temp_feels_like":temp_feels_like,
+        "delta_temp":delta_temp,"temp_roll_6h":temp_roll_6h,
+        "iws_roll_6h":iws_roll_6h,"temp_x_vent":temp_x_vent,
+        "pres_x_dewp":pres_x_dewp,"is_rainy":is_rainy,"month":month,
+        "dayofweek":dayofweek,"is_weekend":is_weekend,
+        "wind_dir_NW":wind_dir_NW,"wind_dir_SE":wind_dir_SE,
+        "wind_dir_cv":wind_dir_cv,"vent_modéré":vent_modere,
+        "vent_fort":vent_fort,"saison_Hiver":saison_Hiver,
+        "saison_Printemps":saison_Printemps,"saison_Été":saison_Ete,
+        "pm25_lag_1d":pm25_lag_1d,"pm25_lag_2d":pm25_lag_2d,
+        "pm25_lag_3d":pm25_lag_3d,"pm25_lag_7d":pm25_lag_7d,
+        "pm25_roll_3d":pm25_roll_3d,"pm25_roll_7d":pm25_roll_7d,
+        "pm25_roll_14d":pm25_roll_14d,"pm25_delta_1d":pm25_delta_1d,
     }
 
     input_df = pd.DataFrame([input_dict])
@@ -575,29 +494,24 @@ if page == "Accueil & Prédiction":
     input_df = input_df[features]
 
     st.markdown("---")
-    if st.button(
-        "Prédire le PM2.5 pour demain", type="primary", use_container_width=True
-    ):
+    if st.button("Prédire le PM2.5 pour demain", type="primary", use_container_width=True):
+
         prediction = float(model.predict(input_df)[0])
 
         if prediction < 50:
-            niveau, couleur, bg = "Bon", "#10B981", "#F0FDF4"
-            conseil = (
-                "Qualité de l'air excellente. Activités extérieures sans restriction."
-            )
+            niveau, couleur, bg = "Bon",          "#10B981", "#F0FDF4"
+            conseil = "Qualité de l'air excellente. Activités extérieures sans restriction."
         elif prediction < 100:
-            niveau, couleur, bg = "Modéré", "#F59E0B", "#FFFBEB"
+            niveau, couleur, bg = "Modéré",       "#F59E0B", "#FFFBEB"
             conseil = "Qualité acceptable. Les personnes sensibles devraient limiter les efforts prolongés."
         elif prediction < 150:
-            niveau, couleur, bg = "Mauvais", "#F97316", "#FFF7ED"
-            conseil = (
-                "Personnes sensibles : éviter les activités extérieures prolongées."
-            )
+            niveau, couleur, bg = "Mauvais",      "#F97316", "#FFF7ED"
+            conseil = "Personnes sensibles : éviter les activités extérieures prolongées."
         elif prediction < 250:
             niveau, couleur, bg = "Très mauvais", "#EF4444", "#FEF2F2"
             conseil = "Alerte pollution. Réduire les sorties et envisager des restrictions de circulation."
         else:
-            niveau, couleur, bg = "Dangereux", "#7C3AED", "#F5F3FF"
+            niveau, couleur, bg = "Dangereux",    "#7C3AED", "#F5F3FF"
             conseil = "Urgence sanitaire. Fermeture des écoles recommandée. Restrictions de circulation obligatoires."
 
         sec("02", "Résultat de la prédiction")
@@ -606,14 +520,14 @@ if page == "Accueil & Prédiction":
         with col_r1:
             st.markdown(
                 f'<div class="result-card" style="background:{bg};border-color:{couleur};">'
-                f"<div style=\"font-family:'IBM Plex Mono',monospace;font-size:11px;"
+                f'<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;'
                 f'color:{couleur};text-transform:uppercase;letter-spacing:0.12em;margin-bottom:12px;">Prévision J+1</div>'
                 f'<div class="result-value" style="color:{couleur};">{prediction:.0f}</div>'
                 f'<div class="result-unit">µg/m³</div>'
                 f'<div class="result-niveau" style="color:{couleur};">{niveau}</div>'
-                f"<div style=\"font-size:11px;color:#64748B;margin-top:12px;font-family:'IBM Plex Mono',monospace;\">"
-                f"IC ± MAE : [{max(0, prediction - stats['mae']):.0f} – {prediction + stats['mae']:.0f}] µg/m³"
-                f"</div></div>",
+                f'<div style="font-size:11px;color:#64748B;margin-top:12px;font-family:\'IBM Plex Mono\',monospace;">'
+                f'IC ± MAE : [{max(0,prediction-stats["mae"]):.0f} – {prediction+stats["mae"]:.0f}] µg/m³'
+                f'</div></div>',
                 unsafe_allow_html=True,
             )
 
@@ -621,44 +535,29 @@ if page == "Accueil & Prédiction":
             # Jauge circulaire : les zones de couleur correspondent aux seuils AQI.
             # L'aiguille noire indique la valeur prédite.
             # Le trait noir épais à 150 µg/m³ marque le seuil d'alerte critique.
-            fig_g = go.Figure(
-                go.Indicator(
-                    mode="gauge+number",
-                    value=prediction,
-                    gauge={
-                        "axis": {"range": [0, 400], "tickcolor": "#94A3B8"},
-                        "bar": {"color": couleur, "thickness": 0.25},
-                        "bgcolor": "white",
-                        "borderwidth": 0,
-                        "steps": [
-                            {"range": [0, 50], "color": "#D1FAE5"},
-                            {"range": [50, 100], "color": "#FEF3C7"},
-                            {"range": [100, 150], "color": "#FED7AA"},
-                            {"range": [150, 250], "color": "#FECACA"},
-                            {"range": [250, 400], "color": "#EDE9FE"},
-                        ],
-                        "threshold": {
-                            "line": {"color": "#1E293B", "width": 3},
-                            "thickness": 0.8,
-                            "value": 150,
-                        },
-                    },
-                    number={
-                        "suffix": " µg/m³",
-                        "font": {"size": 28, "color": couleur, "family": "Sora"},
-                    },
-                    title={
-                        "text": "Concentration PM2.5 prévue demain",
-                        "font": {"size": 14, "color": "#64748B", "family": "Sora"},
-                    },
-                )
-            )
-            fig_g.update_layout(
-                height=280,
-                margin=dict(t=50, b=10, l=30, r=30),
-                paper_bgcolor="rgba(0,0,0,0)",
-                font={"family": "Sora"},
-            )
+            fig_g = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=prediction,
+                gauge={
+                    "axis": {"range": [0, 400], "tickcolor": "#94A3B8"},
+                    "bar": {"color": couleur, "thickness": 0.25},
+                    "bgcolor": "white", "borderwidth": 0,
+                    "steps": [
+                        {"range": [0,   50],  "color": "#D1FAE5"},
+                        {"range": [50,  100], "color": "#FEF3C7"},
+                        {"range": [100, 150], "color": "#FED7AA"},
+                        {"range": [150, 250], "color": "#FECACA"},
+                        {"range": [250, 400], "color": "#EDE9FE"},
+                    ],
+                    "threshold": {"line": {"color": "#1E293B","width": 3},
+                                  "thickness": 0.8, "value": 150},
+                },
+                number={"suffix": " µg/m³", "font": {"size": 28, "color": couleur, "family": "Sora"}},
+                title={"text": "Concentration PM2.5 prévue demain",
+                       "font": {"size": 14, "color": "#64748B", "family": "Sora"}},
+            ))
+            fig_g.update_layout(height=280, margin=dict(t=50,b=10,l=30,r=30),
+                                paper_bgcolor="rgba(0,0,0,0)", font={"family":"Sora"})
             st.plotly_chart(fig_g, use_container_width=True)
 
         st.info(f"**Recommandation :** {conseil}")
@@ -673,26 +572,19 @@ if page == "Accueil & Prédiction":
 
         # Valeurs de référence historiques (moyennes dataset 2010-2014)
         mean_ref = {
-            "pm25_lag_1h": 97.0,
-            "pm25_roll_3h": 97.0,
-            "pm25_lag_6h": 97.0,
-            "pm25_roll_12h": 97.0,
-            "pm25_lag_24h": 97.0,
-            "Iws": 23.0,
-            "TEMP": 12.0,
-            "PRES": 1016.0,
-            "DEWP": -1.0,
-            "Ir": 0.2,
-            "Is": 0.1,
+            "pm25_lag_1h": 97.0, "pm25_roll_3h": 97.0, "pm25_lag_6h": 97.0,
+            "pm25_roll_12h": 97.0, "pm25_lag_24h": 97.0,
+            "Iws": 23.0, "TEMP": 12.0, "PRES": 1016.0, "DEWP": -1.0,
+            "Ir": 0.2, "Is": 0.1,
         }
         # Groupes de features avec leur importance LightGBM
         influence_groups = {
             "PM2.5 récent (lags)": [
-                ("pm25_lag_1h", pm25_lag_1h, 0.152),
-                ("pm25_roll_3h", pm25_roll_3h, 0.168),
-                ("pm25_lag_6h", pm25_lag_6h, 0.099),
+                ("pm25_lag_1h",   pm25_lag_1h,   0.152),
+                ("pm25_roll_3h",  pm25_roll_3h,  0.168),
+                ("pm25_lag_6h",   pm25_lag_6h,   0.099),
                 ("pm25_roll_12h", pm25_roll_12h, 0.121),
-                ("pm25_lag_24h", pm25_lag_24h, 0.051),
+                ("pm25_lag_24h",  pm25_lag_24h,  0.051),
             ],
             "Vent": [
                 ("Iws", Iws, 0.028),
@@ -724,29 +616,23 @@ if page == "Accueil & Prédiction":
         # Un score positif (rouge) signifie que les valeurs saisies sont supérieures
         # à la moyenne historique dans ce groupe → tend à augmenter le PM2.5 prédit.
         # Un score négatif (vert) signifie des conditions plus favorables que la moyenne.
-        fig_inf = go.Figure(
-            go.Bar(
-                x=g_values,
-                y=g_labels,
-                orientation="h",
-                marker=dict(
-                    color=["#EF4444" if v > 0 else "#10B981" for v in g_values],
-                    line=dict(width=0),
-                ),
-                text=[f"{'+' if v > 0 else ''}{v:.3f}" for v in g_values],
-                textposition="outside",
-            )
-        )
+        fig_inf = go.Figure(go.Bar(
+            x=g_values, y=g_labels, orientation="h",
+            marker=dict(
+                color=["#EF4444" if v > 0 else "#10B981" for v in g_values],
+                line=dict(width=0),
+            ),
+            text=[f"{'+' if v > 0 else ''}{v:.3f}" for v in g_values],
+            textposition="outside",
+        ))
         fig_inf.add_vline(x=0, line_color="#1E293B", line_width=1.5)
         fig_inf.update_layout(
             height=260,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
             font=dict(family="Sora"),
             xaxis=dict(
                 title="Contribution relative (rouge = aggrave, vert = améliore)",
-                showgrid=True,
-                gridcolor="#F1F5F9",
+                showgrid=True, gridcolor="#F1F5F9",
             ),
             yaxis=dict(showgrid=False, tickfont=dict(size=12)),
             margin=dict(t=20, b=50, l=180, r=80),
@@ -758,10 +644,10 @@ if page == "Accueil & Prédiction":
     sec("03", "Grille de référence — Seuils PM2.5")
 
     seuil_data = {
-        "Niveau": ["Bon", "Modéré", "Mauvais", "Très mauvais", "Dangereux"],
-        "Plage (µg/m³)": ["< 50", "50–100", "100–150", "150–250", "> 250"],
-        "Couleur": ["#10B981", "#F59E0B", "#F97316", "#EF4444", "#7C3AED"],
-        "Conseil": [
+        "Niveau":         ["Bon","Modéré","Mauvais","Très mauvais","Dangereux"],
+        "Plage (µg/m³)":  ["< 50","50–100","100–150","150–250","> 250"],
+        "Couleur":        ["#10B981","#F59E0B","#F97316","#EF4444","#7C3AED"],
+        "Conseil":        [
             "Activités normales",
             "Limiter les efforts intenses (personnes sensibles)",
             "Éviter les activités extérieures prolongées",
@@ -772,29 +658,18 @@ if page == "Accueil & Prédiction":
     seuil_df = pd.DataFrame(seuil_data)
     fig_s = go.Figure()
     for _, row in seuil_df.iterrows():
-        fig_s.add_trace(
-            go.Bar(
-                x=[1],
-                y=[row["Niveau"]],
-                orientation="h",
-                marker_color=row["Couleur"],
-                text=row["Plage (µg/m³)"],
-                textposition="inside",
-                hovertext=row["Conseil"],
-                hoverinfo="text",
-                name=row["Niveau"],
-            )
-        )
+        fig_s.add_trace(go.Bar(
+            x=[1], y=[row["Niveau"]], orientation="h",
+            marker_color=row["Couleur"],
+            text=row["Plage (µg/m³)"], textposition="inside",
+            hovertext=row["Conseil"], hoverinfo="text",
+            name=row["Niveau"],
+        ))
     fig_s.update_layout(
-        barmode="stack",
-        height=190,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(visible=False),
-        yaxis=dict(tickfont=dict(family="Sora", size=12)),
-        showlegend=False,
-        margin=dict(t=10, b=10, l=10, r=10),
-        font=dict(family="Sora"),
+        barmode="stack", height=190,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(visible=False), yaxis=dict(tickfont=dict(family="Sora",size=12)),
+        showlegend=False, margin=dict(t=10,b=10,l=10,r=10), font=dict(family="Sora"),
     )
     st.plotly_chart(fig_s, use_container_width=True)
 
@@ -803,8 +678,8 @@ if page == "Accueil & Prédiction":
 # PAGE 2 — HISTORIQUE & TENDANCES
 # ═════════════════════════════════════════════════════════════
 elif page == "Historique & Tendances":
-    st.markdown(
-        """
+
+    st.markdown("""
     <div class="page-hero">
         <div class="hero-label">Données historiques · UCI Beijing PM2.5 Dataset</div>
         <div class="hero-title">Historique de la pollution<br><span>2010 – 2014</span></div>
@@ -814,11 +689,9 @@ elif page == "Historique & Tendances":
             et météorologiques exploités par le modèle LightGBM.
         </div>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
-    years = sorted(df.index.year.unique())
+    years    = sorted(df.index.year.unique())
     year_sel = st.multiselect("Filtrer par année", years, default=years)
     if not year_sel:
         st.warning("Veuillez sélectionner au moins une année.")
@@ -830,107 +703,55 @@ elif page == "Historique & Tendances":
     # ── Indicateurs clés dynamiques ──────────────────────────────────────────
     # Recalculés à chaque changement de filtre année pour rester cohérents
     # avec les données affichées dans les graphiques ci-dessous.
-    pct_d = (df_sel["pm25"] > 150).mean() * 100  # % d'heures en zone dangereuse
-    pct_b = (df_sel["pm25"] < 50).mean() * 100  # % d'heures en bonne qualité
+    pct_d = (df_sel["pm25"] > 150).mean() * 100   # % d'heures en zone dangereuse
+    pct_b = (df_sel["pm25"] < 50).mean()  * 100   # % d'heures en bonne qualité
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric("PM2.5 moyen", f"{df_sel['pm25'].mean():.0f} µg/m³")
-    k2.metric("PM2.5 médian", f"{df_sel['pm25'].median():.0f} µg/m³")
-    k3.metric("Heures > 150 µg/m³", f"{pct_d:.1f} %")
-    k4.metric("Heures qualité bonne", f"{pct_b:.1f} %")
+    k1.metric("PM2.5 moyen",           f"{df_sel['pm25'].mean():.0f} µg/m³")
+    k2.metric("PM2.5 médian",          f"{df_sel['pm25'].median():.0f} µg/m³")
+    k3.metric("Heures > 150 µg/m³",    f"{pct_d:.1f} %")
+    k4.metric("Heures qualité bonne",  f"{pct_b:.1f} %")
 
     st.markdown("---")
 
     # 1. Série temporelle
     sec("01", "Série temporelle journalière")
-    st.caption(
-        "Forte saisonnalité hivernale : pics > 300 µg/m³ en décembre–février liés aux inversions thermiques."
-    )
-
-    st.markdown("""
-    **Que regarder ici :**
-    - **Pics hivernaux (déc–fév)** : Inversions thermiques (air froid bloqué en surface) → piégeage des polluants
-    - **Creux estivaux** : Couche limite atmosphérique plus haute + ventilation → dilution des polluants
-    - **Tendance 2010–2014** : Léger amélioration après 2013 (politiques de réduction)
-    - **Moyenne mobile 7j** : Révèle la tendance long terme sans le bruit journalier
-    """)
+    st.caption("Forte saisonnalité hivernale : pics > 300 µg/m³ en décembre–février liés aux inversions thermiques.")
 
     # ── Graphique 1 : Série temporelle journalière ───────────────────────────
-    # **Représentation en deux couches superposées :**
-    #   1. Trait gris fin = moyenne journalière brute (1 point / jour)
-    #      → révèle la volatilité jour-à-jour, les pics isolés
-    #   2. Trait bleu épais = moyenne mobile centrée sur 7 jours (lissage)
-    #      → lisse le bruit pour voir la tendance réelle (saisonnalité)
-    #
-    # **Références normatives superposées :**
-    #   - Seuil OMS (25 µg/m³, tirets verts) : cible d'air sain long terme
-    #   - Seuil alerte (150 µg/m³, tirets rouges) : limite de danger immédiat
-    #   - Zone rouge translucide : periods d'alerte visuelles sans surcharge graphique
-    #
-    # **Insights clés :**
-    # - L'écart large entre brut et lissé → forte variabilité intra-semaine
-    # - Pics périodiquement espacés (hiver) → saisonnalité déterministe
-    # - Quelques dépassements extrêmes > 300 µg/m³ → épisodes de pollution critique
+    # Représentation en deux couches superposées :
+    #   - Trait gris fin   = moyenne journalière brute (1 point / jour)
+    #   - Trait bleu épais = moyenne mobile centrée sur 7 jours (lissage)
+    # La moyenne mobile révèle la tendance saisonnière en atténuant le bruit.
+    # Les lignes de seuil (OMS à 25 µg/m³ et alerte à 150 µg/m³) servent
+    # de repères normatifs pour évaluer l'ampleur des dépassements.
+    # La zone rouge translucide au-dessus de 150 µg/m³ met en évidence
+    # visuellement les périodes de danger sans surcharger le graphique.
     daily = df_sel["pm25"].resample("D").mean()
     roll7 = daily.rolling(7, center=True).mean()
     fig_ts = go.Figure()
-    fig_ts.add_trace(
-        go.Scatter(
-            x=daily.index,
-            y=daily.values,
-            mode="lines",
-            name="Journalier",
-            line=dict(color="#CBD5E1", width=1),
-            opacity=0.8,
-        )
-    )
-    fig_ts.add_trace(
-        go.Scatter(
-            x=roll7.index,
-            y=roll7.values,
-            mode="lines",
-            name="Moy. mobile 7j",
-            line=dict(color="#0EA5E9", width=2.5),
-        )
-    )
-    fig_ts.add_hrect(
-        y0=150, y1=daily.max() + 20, fillcolor="rgba(239,68,68,0.04)", line_width=0
-    )
-    fig_ts.add_hline(
-        y=150,
-        line_dash="dash",
-        line_color="#EF4444",
-        line_width=1.5,
-        annotation_text="Seuil dangereux (150 µg/m³)",
-        annotation_font_color="#EF4444",
-    )
-    fig_ts.add_hline(
-        y=25,
-        line_dash="dot",
-        line_color="#10B981",
-        line_width=1.5,
-        annotation_text="Seuil OMS (25 µg/m³)",
-        annotation_font_color="#10B981",
-    )
+    fig_ts.add_trace(go.Scatter(x=daily.index, y=daily.values, mode="lines",
+        name="Journalier", line=dict(color="#CBD5E1", width=1), opacity=0.8))
+    fig_ts.add_trace(go.Scatter(x=roll7.index, y=roll7.values, mode="lines",
+        name="Moy. mobile 7j", line=dict(color="#0EA5E9", width=2.5)))
+    fig_ts.add_hrect(y0=150, y1=daily.max()+20, fillcolor="rgba(239,68,68,0.04)", line_width=0)
+    fig_ts.add_hline(y=150, line_dash="dash", line_color="#EF4444", line_width=1.5,
+                     annotation_text="Seuil dangereux (150 µg/m³)", annotation_font_color="#EF4444")
+    fig_ts.add_hline(y=25,  line_dash="dot",  line_color="#10B981", line_width=1.5,
+                     annotation_text="Seuil OMS (25 µg/m³)", annotation_font_color="#10B981")
     fig_ts.update_layout(
         height=350,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="white",
-        font=dict(family="Sora"),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
         legend=dict(orientation="h", y=1.08, font=dict(size=12)),
         xaxis=dict(title="", showgrid=True, gridcolor="#F1F5F9"),
         yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
-        hovermode="x unified",
-        margin=dict(t=20, b=40, l=60, r=20),
-    )
+        hovermode="x unified", margin=dict(t=20,b=40,l=60,r=20))
     st.plotly_chart(fig_ts, use_container_width=True)
 
     st.markdown("---")
 
     # 2. Saisonnalité
     sec("02", "Saisonnalité mensuelle et par saison")
-    st.caption(
-        "La pollution hivernale est 2 à 3 fois supérieure à l'été. Décembre et janvier dépassent systématiquement 120 µg/m³ en médiane."
-    )
+    st.caption("La pollution hivernale est 2 à 3 fois supérieure à l'été. Décembre et janvier dépassent systématiquement 120 µg/m³ en médiane.")
 
     c1, c2 = st.columns(2)
     with c1:
@@ -941,156 +762,74 @@ elif page == "Historique & Tendances":
         # Les valeurs numériques en haut de chaque barre facilitent la comparaison
         # précise entre mois sans avoir à lire l'axe Y.
         monthly = df_sel.groupby(df_sel.index.month)["pm25"].mean()
-        fig_m = go.Figure(
-            go.Bar(
-                x=[MOIS_FR[i - 1] for i in monthly.index],
-                y=monthly.values.round(1),
-                marker=dict(
-                    color=monthly.values,
-                    colorscale="RdYlGn_r",
-                    showscale=False,
-                    line=dict(width=0),
-                ),
-                text=[f"{v:.0f}" for v in monthly.values],
-                textposition="outside",
-            )
-        )
+        fig_m = go.Figure(go.Bar(
+            x=[MOIS_FR[i-1] for i in monthly.index], y=monthly.values.round(1),
+            marker=dict(color=monthly.values, colorscale="RdYlGn_r", showscale=False, line=dict(width=0)),
+            text=[f"{v:.0f}" for v in monthly.values], textposition="outside",
+        ))
         fig_m.update_layout(
             title=dict(text="PM2.5 moyen par mois", font=dict(size=14)),
             height=340,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            font=dict(family="Sora"),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             yaxis=dict(title="µg/m³", showgrid=True, gridcolor="#F1F5F9"),
-            xaxis=dict(showgrid=False),
-            margin=dict(t=50, b=20, l=50, r=20),
-        )
+            xaxis=dict(showgrid=False), margin=dict(t=50,b=20,l=50,r=20))
         st.plotly_chart(fig_m, use_container_width=True)
 
     with c2:
         # ── Graphique 2b : Distribution PM2.5 par saison (boxplot) ─────────
-        # **Composants d'un boxplot (essentiel pour lire ce graphe) :**
-        #   1. Ligne centrale   = médiane (50% des observations en dessous/au-dessus)
-        #   2. Boîte (box)      = intervalle interquartile Q1–Q3 (50% central des données)
-        #   3. Moustaches       = 1.5 × IQR (extension au-delà de la boîte)
-        #   4. Points isolés    = valeurs aberrantes (épisodes extrêmes)
-        #
-        # **Avantage vs moyenne :** Montre la DISPERSION, pas juste le centre !
-        #   - Boîte large = hiver (très variable, épisodes extrêmes)
-        #   - Boîte fine = été (pollution stable, peu de surprises)
-        #
-        # **Insight clé :** L'hiver a x2 plus de variabilité que l'été → imprévisibilité accrue
-        fig_box = px.box(
-            df_sel,
-            x="saison",
-            y="pm25",
-            color="saison",
-            category_orders={"saison": ["Hiver", "Printemps", "Été", "Automne"]},
-            color_discrete_map=PALETTE_SAISONS,
-            title="Distribution PM2.5 par saison",
-        )
+        # Lecture d'un boxplot :
+        #   - Ligne centrale   = médiane (50% des observations en dessous)
+        #   - Boîte            = intervalle interquartile Q1–Q3 (50% central)
+        #   - Moustaches       = 1.5 × IQR au-delà de la boîte
+        #   - Points isolés    = valeurs aberrantes (épisodes extrêmes)
+        # Permet de voir d'un coup d'œil la dispersion, la médiane et les outliers
+        # pour chaque saison — plus riche qu'une simple moyenne.
+        fig_box = px.box(df_sel, x="saison", y="pm25", color="saison",
+            category_orders={"saison":["Hiver","Printemps","Été","Automne"]},
+            color_discrete_map=PALETTE_SAISONS, title="Distribution PM2.5 par saison")
         fig_box.update_traces(showlegend=False)
         fig_box.update_layout(
             height=340,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            font=dict(family="Sora"),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
-            xaxis=dict(title="", showgrid=False),
-            margin=dict(t=50, b=20, l=50, r=20),
-        )
+            xaxis=dict(title="", showgrid=False), margin=dict(t=50,b=20,l=50,r=20))
         st.plotly_chart(fig_box, use_container_width=True)
 
     st.markdown("---")
 
     # 3. Profil horaire
     sec("03", "Profil horaire moyen")
-    st.caption(
-        "Double pic journalier : matinal (7h–9h, trafic) et nocturne (21h–23h, refroidissement). Le creux de 13h–15h correspond à la couche de mélange la plus haute."
-    )
-
-    st.markdown("""
-    **Les 3 phases de la journée type :**
-    
-    | Horaire | Phénomène | PM2.5 | Causes |
-    |---------|-----------|-------|--------|
-    | **7h–9h** | Pic matinal | +30% | Démarrage du trafic, activités industrielles, couche limite basse |
-    | **10h–14h** | Creux central | -40% | Couche de mélange atmosphérique ascendante, dilution des polluants |
-    | **21h–23h** | Pic nocturne | +25% | Refroidissement ralentit le mélange vertical, vent faiblissant |
-    | **23h–6h** | Plateau nocturne | stable | Conditions stables, accumulation locale |
-    
-    **Implication :** Les heures de pics (matin/soir) sont plus difficiles à prédire que le creux de midi
-    (qui est très stable, donc prévisible).
-    """)
+    st.caption("Double pic journalier : matinal (7h–9h, trafic) et nocturne (21h–23h, refroidissement). Le creux de 13h–15h correspond à la couche de mélange la plus haute.")
 
     # ── Graphique 3 : Profil horaire moyen ───────────────────────────────
-    # **Méthodologie :**
-    #   - Moyenne du PM2.5 à chaque heure h sur TOUS les jours de la sélection
-    #   - Résultat = "profil type" d'une journée moyenne
-    #   - Remplissage sous courbe (area chart) accentue visuellement les anomalies
-    #
-    # **Causes physiques des pics identifiées :**
-    #   1. Pic matinal (7h–9h) : démarrage du trafic + chauffage + couche limite bas
-    #   2. Creux de 13h–15h : couche de mélange ascendante (max) → dilution rapide
-    #   3. Pic nocturne (21h–23h) : refroidissement + décroissance du vent
-    #
-    # **Variabilité saisonnière (bonus insight) :**
-    #   - Hiver : pics 2x plus marqués | Été : profil quasi-plat (pollution faible partout)
+    # Pour chaque heure h ∈ [0, 23], on calcule la moyenne du PM2.5 sur TOUS
+    # les jours de la sélection — ce qui donne le "profil type" d'une journée.
+    # Le remplissage sous la courbe (area chart) accentue visuellement les pics
+    # matinaux (7h–9h) liés au démarrage du trafic et des activités industrielles,
+    # et nocturnes (21h–23h) liés au refroidissement et à la baisse du vent.
+    # Le creux de 13h–15h correspond à la couche de mélange atmosphérique maximale,
+    # qui dilue les polluants en altitude.
     hourly = df_sel.groupby(df_sel.index.hour)["pm25"].mean().reset_index()
     hourly.columns = ["heure", "pm25"]
     fig_h = go.Figure()
-    fig_h.add_trace(
-        go.Scatter(
-            x=hourly["heure"],
-            y=hourly["pm25"],
-            fill="tozeroy",
-            fillcolor="rgba(14,165,233,0.07)",
-            mode="lines+markers",
-            line=dict(color="#0EA5E9", width=2.5),
-            marker=dict(size=6, color="#0EA5E9"),
-        )
-    )
+    fig_h.add_trace(go.Scatter(x=hourly["heure"], y=hourly["pm25"],
+        fill="tozeroy", fillcolor="rgba(14,165,233,0.07)",
+        mode="lines+markers", line=dict(color="#0EA5E9", width=2.5),
+        marker=dict(size=6, color="#0EA5E9")))
     fig_h.update_layout(
         height=300,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="white",
-        font=dict(family="Sora"),
-        xaxis=dict(
-            title="Heure",
-            tickvals=list(range(0, 24, 2)),
-            ticktext=[f"{h}h" for h in range(0, 24, 2)],
-            showgrid=True,
-            gridcolor="#F1F5F9",
-        ),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
+        xaxis=dict(title="Heure", tickvals=list(range(0,24,2)),
+                   ticktext=[f"{h}h" for h in range(0,24,2)], showgrid=True, gridcolor="#F1F5F9"),
         yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
-        showlegend=False,
-        margin=dict(t=20, b=50, l=60, r=20),
-    )
+        showlegend=False, margin=dict(t=20,b=50,l=60,r=20))
     st.plotly_chart(fig_h, use_container_width=True)
 
     st.markdown("---")
 
     # 4. Corrélations météo
     sec("04", "Relations météo / pollution")
-    st.caption(
-        "Le vent (Iws) est le facteur météo le plus négativement corrélé au PM2.5. Une pression élevée (anticyclone) favorise l'accumulation des polluants."
-    )
-
-    st.markdown("""
-    **Variables météo clés pour le PM2.5 :**
-    
-    | Variable | Corrélation | Mécanisme |
-    |----------|-------------|----------|
-    | **Iws** (Wind Speed) | **−0.45** (forte négative) | Vent dilue & disperse les polluants → inverse parfait |
-    | **TEMP** (Température) | **−0.35** (modérée négatif) | Indirecte : température ↑ = jour = vent ↑ = dilution |
-    | **PRES** (Pression) | **+0.30** (modérée positif) | Anticyclone (haute pression) = calme = accumulation |
-    | **DEWP** (Dew Point) | **+0.25** (faible) | Humidité favorise la condensation & les brumes |
-    
-    **Hiérarchie de prédictibilité :**
-    1. **Vent** = facteur #1 (mécanique directe)
-    2. **Température** = proxy de la saison (indirect)
-    3. **Pression** = indicator d'anticyclone (indirect)
-    """)
+    st.caption("Le vent (Iws) est le facteur météo le plus négativement corrélé au PM2.5. Une pression élevée (anticyclone) favorise l'accumulation des polluants.")
 
     df_s = df_sel.sample(min(3000, len(df_sel)), random_state=42)
     c3, c4 = st.columns(2)
@@ -1104,42 +843,29 @@ elif page == "Historique & Tendances":
         # Un vent fort (Iws > 50 m/s) disperse mécaniquement les particules fines,
         # réduisant significativement le PM2.5. À l'inverse, en conditions calmes
         # (Iws < 5 m/s), les polluants s'accumulent en couche basse.
-        iws_bins = pd.cut(df_s["Iws"], bins=20)
+        iws_bins  = pd.cut(df_s["Iws"], bins=20)
         iws_trend = df_s.groupby(iws_bins, observed=True)["pm25"].median().reset_index()
         iws_trend["Iws_mid"] = iws_trend["Iws"].apply(lambda x: x.mid)
 
         fig_w = go.Figure()
-        fig_w.add_trace(
-            go.Scatter(
-                x=df_s["Iws"],
-                y=df_s["pm25"],
-                mode="markers",
-                marker=dict(color="#60A5FA", size=4, opacity=0.25),
-                name="Observations",
-            )
-        )
-        fig_w.add_trace(
-            go.Scatter(
-                x=iws_trend["Iws_mid"],
-                y=iws_trend["pm25"],
-                mode="lines",
-                line=dict(color="#EF4444", width=2.5),
-                name="Tendance (médiane par bin)",
-            )
-        )
+        fig_w.add_trace(go.Scatter(
+            x=df_s["Iws"], y=df_s["pm25"], mode="markers",
+            marker=dict(color="#60A5FA", size=4, opacity=0.25),
+            name="Observations",
+        ))
+        fig_w.add_trace(go.Scatter(
+            x=iws_trend["Iws_mid"], y=iws_trend["pm25"], mode="lines",
+            line=dict(color="#EF4444", width=2.5),
+            name="Tendance (médiane par bin)",
+        ))
         fig_w.update_layout(
             title=dict(text="PM2.5 vs Vitesse du vent", font=dict(size=14)),
             height=320,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            font=dict(family="Sora"),
-            xaxis=dict(
-                title="Vitesse du vent (m/s)", showgrid=True, gridcolor="#F1F5F9"
-            ),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
+            xaxis=dict(title="Vitesse du vent (m/s)", showgrid=True, gridcolor="#F1F5F9"),
             yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
             legend=dict(orientation="h", y=1.08, font=dict(size=11)),
-            margin=dict(t=50, b=30, l=60, r=20),
-        )
+            margin=dict(t=50,b=30,l=60,r=20))
         st.plotly_chart(fig_w, use_container_width=True)
 
     with c4:
@@ -1153,51 +879,36 @@ elif page == "Historique & Tendances":
         # Ce graphique illustre pourquoi TEMP est une feature importante du modèle
         # mais insuffisante seule (la causalité est indirecte — c'est la saison
         # qui joue, pas la température en elle-même).
-        temp_bins = pd.cut(df_s["TEMP"], bins=20)
-        temp_trend = (
-            df_s.groupby(temp_bins, observed=True)["pm25"].median().reset_index()
-        )
+        temp_bins  = pd.cut(df_s["TEMP"], bins=20)
+        temp_trend = df_s.groupby(temp_bins, observed=True)["pm25"].median().reset_index()
         temp_trend["TEMP_mid"] = temp_trend["TEMP"].apply(lambda x: x.mid)
 
         fig_t = go.Figure()
-        fig_t.add_trace(
-            go.Scatter(
-                x=df_s["TEMP"],
-                y=df_s["pm25"],
-                mode="markers",
-                marker=dict(color="#F59E0B", size=4, opacity=0.25),
-                name="Observations",
-            )
-        )
-        fig_t.add_trace(
-            go.Scatter(
-                x=temp_trend["TEMP_mid"],
-                y=temp_trend["pm25"],
-                mode="lines",
-                line=dict(color="#EF4444", width=2.5),
-                name="Tendance (médiane par bin)",
-            )
-        )
+        fig_t.add_trace(go.Scatter(
+            x=df_s["TEMP"], y=df_s["pm25"], mode="markers",
+            marker=dict(color="#F59E0B", size=4, opacity=0.25),
+            name="Observations",
+        ))
+        fig_t.add_trace(go.Scatter(
+            x=temp_trend["TEMP_mid"], y=temp_trend["pm25"], mode="lines",
+            line=dict(color="#EF4444", width=2.5),
+            name="Tendance (médiane par bin)",
+        ))
         fig_t.update_layout(
             title=dict(text="PM2.5 vs Température", font=dict(size=14)),
             height=320,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            font=dict(family="Sora"),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             xaxis=dict(title="Température (°C)", showgrid=True, gridcolor="#F1F5F9"),
             yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
             legend=dict(orientation="h", y=1.08, font=dict(size=11)),
-            margin=dict(t=50, b=30, l=60, r=20),
-        )
+            margin=dict(t=50,b=30,l=60,r=20))
         st.plotly_chart(fig_t, use_container_width=True)
 
     st.markdown("---")
 
     # 5. Heatmap jour × heure
     sec("05", "Heatmap — Jour de semaine × Heure")
-    st.caption(
-        "La pollution est légèrement plus basse le week-end en journée, mais les nuits de vendredi et samedi restent élevées."
-    )
+    st.caption("La pollution est légèrement plus basse le week-end en journée, mais les nuits de vendredi et samedi restent élevées.")
 
     # ── Graphique 5 : Heatmap Jour × Heure ────────────────────────────────
     # Matrice 7 lignes (jours) × 24 colonnes (heures) :
@@ -1208,40 +919,23 @@ elif page == "Historique & Tendances":
     # intuitive sans passer par la colorbar.
     # Lecture : les cellules les plus sombres (rouge foncé) indiquent
     # les combinaisons jour/heure les plus polluées sur la période.
-    jours = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
-    hm = (
-        df_sel.groupby([df_sel.index.dayofweek, df_sel.index.hour])["pm25"]
-        .mean()
-        .unstack()
-    )
-    fig_hm = go.Figure(
-        go.Heatmap(
-            z=hm.values,
-            x=[f"{h}h" for h in hm.columns],
-            y=[jours[i] for i in hm.index],
-            colorscale="RdYlGn_r",
-            colorbar=dict(title="µg/m³"),
-            hoverongaps=False,
-        )
-    )
-    fig_hm.update_layout(
-        height=280,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="white",
-        margin=dict(t=20, b=40, l=50, r=20),
-        xaxis=dict(tickfont=dict(family="IBM Plex Mono", size=10)),
-        yaxis=dict(tickfont=dict(family="Sora", size=12)),
-        font=dict(family="Sora"),
-    )
+    jours = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"]
+    hm = df_sel.groupby([df_sel.index.dayofweek, df_sel.index.hour])["pm25"].mean().unstack()
+    fig_hm = go.Figure(go.Heatmap(
+        z=hm.values, x=[f"{h}h" for h in hm.columns],
+        y=[jours[i] for i in hm.index],
+        colorscale="RdYlGn_r", colorbar=dict(title="µg/m³"), hoverongaps=False))
+    fig_hm.update_layout(height=280, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+        margin=dict(t=20,b=40,l=50,r=20),
+        xaxis=dict(tickfont=dict(family="IBM Plex Mono",size=10)),
+        yaxis=dict(tickfont=dict(family="Sora",size=12)), font=dict(family="Sora"))
     st.plotly_chart(fig_hm, use_container_width=True)
 
     st.markdown("---")
 
     # 6. Distribution globale
     sec("06", "Distribution globale du PM2.5")
-    st.caption(
-        "Distribution fortement asymétrique à droite : majorité < 100 µg/m³, mais une longue queue reflète des épisodes extrêmes pouvant dépasser 500 µg/m³."
-    )
+    st.caption("Distribution fortement asymétrique à droite : majorité < 100 µg/m³, mais une longue queue reflète des épisodes extrêmes pouvant dépasser 500 µg/m³.")
 
     # ── Graphique 6 : Distribution globale du PM2.5 ──────────────────────
     # Histogramme avec 80 intervalles couvrant [0, max_PM2.5].
@@ -1252,47 +946,28 @@ elif page == "Historique & Tendances":
     # la longue queue vers les valeurs élevées tire la moyenne vers le haut
     # par rapport à la médiane. Cela justifie l'utilisation du log dans le
     # feature engineering (transformation log-normale pour normaliser la cible).
-    fig_hist = px.histogram(
-        df_sel,
-        x="pm25",
-        nbins=80,
+    fig_hist = px.histogram(df_sel, x="pm25", nbins=80,
         color_discrete_sequence=["#0EA5E9"],
-        labels={"pm25": "PM2.5 (µg/m³)", "count": "Nombre d'heures"},
-        title="Distribution des concentrations PM2.5 (observations horaires)",
-    )
-    fig_hist.add_vline(
-        x=df_sel["pm25"].mean(),
-        line_dash="dash",
-        line_color="#EF4444",
-        annotation_text=f"Moy. = {df_sel['pm25'].mean():.0f}",
-        annotation_font_color="#EF4444",
-    )
-    fig_hist.add_vline(
-        x=df_sel["pm25"].median(),
-        line_dash="dot",
-        line_color="#10B981",
-        annotation_text=f"Méd. = {df_sel['pm25'].median():.0f}",
-        annotation_font_color="#10B981",
-    )
+        labels={"pm25":"PM2.5 (µg/m³)", "count":"Nombre d'heures"},
+        title="Distribution des concentrations PM2.5 (observations horaires)")
+    fig_hist.add_vline(x=df_sel["pm25"].mean(), line_dash="dash", line_color="#EF4444",
+        annotation_text=f"Moy. = {df_sel['pm25'].mean():.0f}", annotation_font_color="#EF4444")
+    fig_hist.add_vline(x=df_sel["pm25"].median(), line_dash="dot", line_color="#10B981",
+        annotation_text=f"Méd. = {df_sel['pm25'].median():.0f}", annotation_font_color="#10B981")
     fig_hist.update_layout(
         height=310,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="white",
-        font=dict(family="Sora"),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
         title=dict(font=dict(size=14)),
         xaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
         yaxis=dict(title="Nombre d'heures", showgrid=True, gridcolor="#F1F5F9"),
-        margin=dict(t=50, b=40, l=60, r=20),
-    )
+        margin=dict(t=50,b=40,l=60,r=20))
     st.plotly_chart(fig_hist, use_container_width=True)
 
     st.markdown("---")
 
     # 7. Évolution annuelle
     sec("07", "Évolution annuelle — Distributions comparées")
-    st.caption(
-        "Comparaison de la distribution du PM2.5 par année pour identifier les tendances à moyen terme."
-    )
+    st.caption("Comparaison de la distribution du PM2.5 par année pour identifier les tendances à moyen terme.")
 
     # ── Graphique 7 : Violin plot par année ──────────────────────────────
     # Le violin plot combine deux représentations en une seule :
@@ -1304,37 +979,25 @@ elif page == "Historique & Tendances":
     # points=False : on masque les observations individuelles pour alléger
     # l'affichage (43 824 points rendraient le graphique illisible).
     df_sel["annee"] = df_sel.index.year.astype(str)
-    fig_yr = px.violin(
-        df_sel,
-        x="annee",
-        y="pm25",
-        color="annee",
-        box=True,
-        points=False,
+    fig_yr = px.violin(df_sel, x="annee", y="pm25", color="annee",
+        box=True, points=False,
         color_discrete_sequence=px.colors.qualitative.Pastel,
-        labels={"annee": "Année", "pm25": "PM2.5 (µg/m³)"},
-        title="Distribution annuelle du PM2.5",
-    )
+        labels={"annee":"Année","pm25":"PM2.5 (µg/m³)"},
+        title="Distribution annuelle du PM2.5")
     fig_yr.update_layout(
         height=340,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="white",
-        font=dict(family="Sora"),
-        title=dict(font=dict(size=14)),
-        showlegend=False,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
+        title=dict(font=dict(size=14)), showlegend=False,
         xaxis=dict(showgrid=False),
         yaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
-        margin=dict(t=50, b=30, l=60, r=20),
-    )
+        margin=dict(t=50,b=30,l=60,r=20))
     st.plotly_chart(fig_yr, use_container_width=True)
 
     st.markdown("---")
 
     # 8. PM2.5 selon la direction du vent (nouveau graphique)
     sec("08", "PM2.5 selon la direction du vent")
-    st.caption(
-        "La direction du vent influence fortement la concentration en PM2.5 : certaines directions apportent de l'air pollué depuis des zones industrielles."
-    )
+    st.caption("La direction du vent influence fortement la concentration en PM2.5 : certaines directions apportent de l'air pollué depuis des zones industrielles.")
 
     # ── Graphique 8 : PM2.5 moyen par direction de vent ─────────────────
     # Barres simples : moyenne du PM2.5 regroupée par la variable catégorielle
@@ -1348,29 +1011,20 @@ elif page == "Historique & Tendances":
     # qui n'auraient pas encodé cette colonne.
     if "cbwd" in df_sel.columns:
         vent_group = df_sel.groupby("cbwd")["pm25"].mean().reset_index()
-        vent_group.columns = ["Direction", "PM2.5 moyen"]
-        fig_v = go.Figure(
-            go.Bar(
-                x=vent_group["Direction"],
-                y=vent_group["PM2.5 moyen"],
-                marker=dict(
-                    color=["#0EA5E9", "#10B981", "#F59E0B", "#EF4444"],
-                    line=dict(width=0),
-                ),
-                text=[f"{v:.0f}" for v in vent_group["PM2.5 moyen"]],
-                textposition="outside",
-            )
-        )
+        vent_group.columns = ["Direction","PM2.5 moyen"]
+        fig_v = go.Figure(go.Bar(
+            x=vent_group["Direction"], y=vent_group["PM2.5 moyen"],
+            marker=dict(color=["#0EA5E9","#10B981","#F59E0B","#EF4444"],
+                        line=dict(width=0)),
+            text=[f"{v:.0f}" for v in vent_group["PM2.5 moyen"]], textposition="outside",
+        ))
         fig_v.update_layout(
             height=300,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            font=dict(family="Sora"),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             title=dict(text="PM2.5 moyen par direction de vent", font=dict(size=14)),
             yaxis=dict(title="PM2.5 (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
             xaxis=dict(showgrid=False, title="Direction du vent"),
-            margin=dict(t=50, b=30, l=60, r=20),
-        )
+            margin=dict(t=50,b=30,l=60,r=20))
         st.plotly_chart(fig_v, use_container_width=True)
 
 
@@ -1378,8 +1032,8 @@ elif page == "Historique & Tendances":
 # PAGE 3 — PERFORMANCES DU MODÈLE
 # ═════════════════════════════════════════════════════════════
 elif page == "Performances du modèle":
-    st.markdown(
-        """
+
+    st.markdown("""
     <div class="page-hero">
         <div class="hero-label">Évaluation · Split temporel strict · Jeu de test 2014</div>
         <div class="hero-title">Performances<br>des <span>4 modèles</span></div>
@@ -1389,34 +1043,23 @@ elif page == "Performances du modèle":
             (split temporel strict — sans fuite de données).
         </div>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric(
-        "Modèle retenu",
-        "LightGBM",
-        help="Meilleur score global parmi les 4 modèles comparés",
-    )
-    c2.metric(
-        "RMSE",
-        f"{stats['rmse']:.2f} µg/m³",
-        help="Erreur quadratique moyenne — pénalise les grandes erreurs",
-    )
-    c3.metric(
-        "MAE",
-        f"{stats['mae']:.2f} µg/m³",
-        help="Erreur absolue moyenne — directement interprétable",
-    )
-    c4.metric("R²", f"{stats['r2']:.3f}", help="Proportion de variance expliquée")
+    c1.metric("Modèle retenu", "LightGBM",
+              help="Meilleur score global parmi les 4 modèles comparés")
+    c2.metric("RMSE", f"{stats['rmse']:.2f} µg/m³",
+              help="Erreur quadratique moyenne — pénalise les grandes erreurs")
+    c3.metric("MAE",  f"{stats['mae']:.2f} µg/m³",
+              help="Erreur absolue moyenne — directement interprétable")
+    c4.metric("R²",   f"{stats['r2']:.3f}",
+              help="Proportion de variance expliquée")
 
     st.markdown("---")
 
     # 1. Tableau comparatif
     sec("01", "Comparaison des 4 modèles")
-    st.markdown(
-        f"""
+    st.markdown(f"""
     <table class="cmp-tbl">
         <thead>
             <tr><th>Modèle</th><th>RMSE (µg/m³)</th><th>MAE (µg/m³)</th><th>R²</th><th>Statut</th></tr>
@@ -1436,9 +1079,9 @@ elif page == "Performances du modèle":
             </tr>
             <tr class="best">
                 <td>LightGBM<span class="b-best">Retenu</span></td>
-                <td style="color:#10B981;"><strong>{stats["rmse"]:.2f}</strong></td>
-                <td style="color:#10B981;"><strong>{stats["mae"]:.2f}</strong></td>
-                <td style="color:#10B981;"><strong>{stats["r2"]:.3f}</strong></td>
+                <td style="color:#10B981;"><strong>{stats['rmse']:.2f}</strong></td>
+                <td style="color:#10B981;"><strong>{stats['mae']:.2f}</strong></td>
+                <td style="color:#10B981;"><strong>{stats['r2']:.3f}</strong></td>
                 <td><span class="b-best">Production</span></td>
             </tr>
         </tbody>
@@ -1447,9 +1090,7 @@ elif page == "Performances du modèle":
                 font-family:'IBM Plex Mono',monospace;">
         Évaluation sur le jeu de test 2014 (split temporel strict — aucune donnée future utilisée).
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -1468,30 +1109,21 @@ elif page == "Performances du modèle":
         fig_bars = go.Figure()
         cols_list = list(PALETTE_MODELS.values())
         for i, row in DF_MODELS.iterrows():
-            fig_bars.add_trace(
-                go.Bar(
-                    name=row["Modèle"],
-                    x=["RMSE", "MAE"],
-                    y=[row["RMSE"], row["MAE"]],
-                    marker_color=cols_list[i],
-                    text=[f"{row['RMSE']:.2f}", f"{row['MAE']:.2f}"],
-                    textposition="outside",
-                )
-            )
+            fig_bars.add_trace(go.Bar(
+                name=row["Modèle"], x=["RMSE", "MAE"],
+                y=[row["RMSE"], row["MAE"]],
+                marker_color=cols_list[i],
+                text=[f"{row['RMSE']:.2f}", f"{row['MAE']:.2f}"],
+                textposition="outside",
+            ))
         fig_bars.update_layout(
-            title=dict(
-                text="RMSE & MAE — comparaison des 4 modèles", font=dict(size=14)
-            ),
-            barmode="group",
-            height=350,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            font=dict(family="Sora"),
+            title=dict(text="RMSE & MAE — comparaison des 4 modèles", font=dict(size=14)),
+            barmode="group", height=350,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             yaxis=dict(title="µg/m³", showgrid=True, gridcolor="#F1F5F9"),
             xaxis=dict(showgrid=False),
             legend=dict(orientation="h", y=-0.22, font=dict(size=12)),
-            margin=dict(t=50, b=100, l=50, r=20),
-        )
+            margin=dict(t=50,b=100,l=50,r=20))
         st.plotly_chart(fig_bars, use_container_width=True)
 
     with c2:
@@ -1504,28 +1136,18 @@ elif page == "Performances du modèle":
         #   R² = 0   → le modèle ne fait pas mieux que prédire la moyenne
         #   R² < 0   → le modèle est pire que la moyenne (ne s'applique pas ici)
         # La barre la plus longue = le meilleur modèle.
-        fig_r2 = go.Figure(
-            go.Bar(
-                x=DF_MODELS["R²"],
-                y=DF_MODELS["Modèle"],
-                orientation="h",
-                marker_color=cols_list,
-                text=[f"{v:.3f}" for v in DF_MODELS["R²"]],
-                textposition="outside",
-            )
-        )
+        fig_r2 = go.Figure(go.Bar(
+            x=DF_MODELS["R²"], y=DF_MODELS["Modèle"], orientation="h",
+            marker_color=cols_list,
+            text=[f"{v:.3f}" for v in DF_MODELS["R²"]], textposition="outside",
+        ))
         fig_r2.update_layout(
             title=dict(text="Coefficient de détermination R²", font=dict(size=14)),
             height=350,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            font=dict(family="Sora"),
-            xaxis=dict(
-                title="R²", range=[0.50, 0.62], showgrid=True, gridcolor="#F1F5F9"
-            ),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
+            xaxis=dict(title="R²", range=[0.50, 0.62], showgrid=True, gridcolor="#F1F5F9"),
             yaxis=dict(showgrid=False),
-            margin=dict(t=50, b=30, l=140, r=70),
-        )
+            margin=dict(t=50,b=30,l=140,r=70))
         st.plotly_chart(fig_r2, use_container_width=True)
 
     st.markdown("---")
@@ -1548,7 +1170,7 @@ elif page == "Performances du modèle":
     n = 800
     y_real = np.abs(np.random.lognormal(np.log(stats["mean_pm25"]), 0.7, n))
     y_real = np.clip(y_real, 5, 500)
-    noise = np.random.normal(0, stats["rmse"] * 0.85, n)
+    noise  = np.random.normal(0, stats["rmse"] * 0.85, n)
     y_pred = np.clip(y_real * 0.90 + noise + 6, 5, 480)
 
     c3, c4 = st.columns(2)
@@ -1562,37 +1184,17 @@ elif page == "Performances du modèle":
         # éloignés de la diagonale, plus l'erreur est grande.
         lim = max(y_real.max(), y_pred.max()) + 10
         fig_pv = go.Figure()
-        fig_pv.add_trace(
-            go.Scatter(
-                x=y_real,
-                y=y_pred,
-                mode="markers",
-                marker=dict(size=5, color="#0EA5E9", opacity=0.4),
-                name="Observations",
-            )
-        )
-        fig_pv.add_trace(
-            go.Scatter(
-                x=[0, lim],
-                y=[0, lim],
-                mode="lines",
-                line=dict(color="#EF4444", dash="dash", width=1.5),
-                name="Parfait",
-            )
-        )
+        fig_pv.add_trace(go.Scatter(x=y_real, y=y_pred, mode="markers",
+            marker=dict(size=5, color="#0EA5E9", opacity=0.4), name="Observations"))
+        fig_pv.add_trace(go.Scatter(x=[0, lim], y=[0, lim], mode="lines",
+            line=dict(color="#EF4444", dash="dash", width=1.5), name="Parfait"))
         fig_pv.update_layout(
             height=340,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            font=dict(family="Sora"),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             title=dict(text="Prédit vs Réel — jeu de test 2014", font=dict(size=14)),
             xaxis=dict(title="PM2.5 réel (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
-            yaxis=dict(
-                title="PM2.5 prédit (µg/m³)", showgrid=True, gridcolor="#F1F5F9"
-            ),
-            legend=dict(orientation="h", y=1.08),
-            margin=dict(t=50, b=50, l=60, r=20),
-        )
+            yaxis=dict(title="PM2.5 prédit (µg/m³)", showgrid=True, gridcolor="#F1F5F9"),
+            legend=dict(orientation="h", y=1.08), margin=dict(t=50,b=50,l=60,r=20))
         st.plotly_chart(fig_pv, use_container_width=True)
 
     with c4:
@@ -1605,30 +1207,19 @@ elif page == "Performances du modèle":
         # La ligne rouge en tirets marque le biais nul (idéal).
         # Si l'histogramme est décalé à droite → biais positif (surestimation globale).
         residus = y_pred - y_real
-        fig_res = px.histogram(
-            x=residus,
-            nbins=50,
+        fig_res = px.histogram(x=residus, nbins=50,
             color_discrete_sequence=["#A78BFA"],
-            labels={"x": "Résidu (µg/m³)", "count": "Fréquence"},
-            title="Distribution des résidus (Prédit − Réel)",
-        )
-        fig_res.add_vline(
-            x=0,
-            line_dash="dash",
-            line_color="#EF4444",
-            annotation_text="Biais nul",
-            annotation_font_color="#EF4444",
-        )
+            labels={"x":"Résidu (µg/m³)","count":"Fréquence"},
+            title="Distribution des résidus (Prédit − Réel)")
+        fig_res.add_vline(x=0, line_dash="dash", line_color="#EF4444",
+            annotation_text="Biais nul", annotation_font_color="#EF4444")
         fig_res.update_layout(
             height=340,
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            font=dict(family="Sora"),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
             title=dict(font=dict(size=14)),
             xaxis=dict(showgrid=True, gridcolor="#F1F5F9"),
             yaxis=dict(title="Fréquence", showgrid=True, gridcolor="#F1F5F9"),
-            margin=dict(t=50, b=50, l=60, r=20),
-        )
+            margin=dict(t=50,b=50,l=60,r=20))
         st.plotly_chart(fig_res, use_container_width=True)
 
     st.markdown("---")
@@ -1653,179 +1244,80 @@ elif page == "Performances du modèle":
     #   Violet (Temporelle)        = month, dayofweek, saison
     # Valeurs issues directement du notebook d'entraînement LightGBM.
     feat_names = [
-        "pm25_roll_3h",
-        "pm25_lag_1h",
-        "pm25_roll_12h",
-        "pm25_lag_6h",
-        "pm25_roll_24h",
-        "PRES",
-        "pm25_lag_24h",
-        "DEWP",
-        "pres_x_dewp",
-        "pm25_lag_12h",
-        "Iws",
-        "pm25_roll_3d",
-        "TEMP",
-        "pm25_lag_1d",
-        "pm25_roll_7d",
-        "iws_roll_6h",
-        "wind_dir_SE",
-        "pm25_lag_7d",
-        "month",
-        "pm25_delta_1d",
+        "pm25_roll_3h","pm25_lag_1h","pm25_roll_12h","pm25_lag_6h",
+        "pm25_roll_24h","PRES","pm25_lag_24h","DEWP",
+        "pres_x_dewp","pm25_lag_12h","Iws","pm25_roll_3d",
+        "TEMP","pm25_lag_1d","pm25_roll_7d","iws_roll_6h",
+        "wind_dir_SE","pm25_lag_7d","month","pm25_delta_1d",
     ]
     importances = [
-        0.168,
-        0.152,
-        0.121,
-        0.099,
-        0.074,
-        0.058,
-        0.051,
-        0.041,
-        0.036,
-        0.032,
-        0.028,
-        0.024,
-        0.020,
-        0.017,
-        0.014,
-        0.012,
-        0.010,
-        0.009,
-        0.008,
-        0.007,
+        0.168,0.152,0.121,0.099,0.074,0.058,0.051,0.041,
+        0.036,0.032,0.028,0.024,0.020,0.017,0.014,0.012,
+        0.010,0.009,0.008,0.007,
     ]
     cat_colors = {
-        "Pollution passée": "#10B981",
-        "Pression/Humidité": "#0EA5E9",
-        "Vent": "#F59E0B",
-        "Température": "#F97316",
-        "Temporelle": "#A78BFA",
+        "Pollution passée":   "#10B981",
+        "Pression/Humidité":  "#0EA5E9",
+        "Vent":               "#F59E0B",
+        "Température":        "#F97316",
+        "Temporelle":         "#A78BFA",
     }
 
     def get_cat(f):
-        if any(x in f for x in ["pm25", "lag", "roll", "delta"]):
-            return "Pollution passée"
-        if any(x in f for x in ["Iws", "iws", "wind", "vent"]):
-            return "Vent"
-        if any(x in f for x in ["PRES", "DEWP", "pres", "rainy"]):
-            return "Pression/Humidité"
-        if any(x in f for x in ["month", "day", "week", "saison"]):
-            return "Temporelle"
+        if any(x in f for x in ["pm25","lag","roll","delta"]):  return "Pollution passée"
+        if any(x in f for x in ["Iws","iws","wind","vent"]):    return "Vent"
+        if any(x in f for x in ["PRES","DEWP","pres","rainy"]): return "Pression/Humidité"
+        if any(x in f for x in ["month","day","week","saison"]): return "Temporelle"
         return "Température"
 
     categories = [get_cat(f) for f in feat_names]
-    bar_colors = [cat_colors[c] for c in categories]
+    bar_colors  = [cat_colors[c] for c in categories]
 
     # Barres horizontales d'importance des features (ordre décroissant, bas → haut).
     # Couleurs par catégorie : vert = variables de pollution passée,
     # bleu = pression/humidité, orange = vent, rouge = température, violet = temporel.
     # L'importance LightGBM mesure le gain total d'information apporté par chaque feature
     # sur l'ensemble des arbres (somme normalisée à 1).
-    fig_fi = go.Figure(
-        go.Bar(
-            x=importances[::-1],
-            y=feat_names[::-1],
-            orientation="h",
-            marker_color=bar_colors[::-1],
-            text=[f"{v:.1%}" for v in importances[::-1]],
-            textposition="outside",
-        )
-    )
+    fig_fi = go.Figure(go.Bar(
+        x=importances[::-1], y=feat_names[::-1], orientation="h",
+        marker_color=bar_colors[::-1],
+        text=[f"{v:.1%}" for v in importances[::-1]], textposition="outside",
+    ))
     # Traces pour la légende
     for cat, col in cat_colors.items():
-        fig_fi.add_trace(
-            go.Bar(x=[None], y=[None], orientation="h", name=cat, marker_color=col)
-        )
+        fig_fi.add_trace(go.Bar(x=[None], y=[None], orientation="h",
+                                name=cat, marker_color=col))
     fig_fi.update_layout(
-        title=dict(
-            text="Top 20 features — Importance relative (LightGBM)", font=dict(size=14)
-        ),
+        title=dict(text="Top 20 features — Importance relative (LightGBM)", font=dict(size=14)),
         height=500,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="white",
-        font=dict(family="Sora"),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white", font=dict(family="Sora"),
         xaxis=dict(title="Importance relative", showgrid=True, gridcolor="#F1F5F9"),
         yaxis=dict(tickfont=dict(family="IBM Plex Mono", size=11), showgrid=False),
         legend=dict(orientation="h", y=-0.1, font=dict(size=12)),
-        margin=dict(t=50, b=100, l=140, r=80),
-    )
+        margin=dict(t=50,b=100,l=140,r=80))
     st.plotly_chart(fig_fi, use_container_width=True)
 
     st.markdown("---")
 
     # Interprétation des métriques
     st.info(
-        f"**R² = {stats['r2']:.3f}** : Le modèle LightGBM explique "
-        f"**{stats['r2'] * 100:.1f}%** de la variance du PM2.5 journalier. "
+        f"**R² = {stats['r2']:.3f}** — Le modèle LightGBM explique "
+        f"**{stats['r2']*100:.1f}%** de la variance du PM2.5 journalier. "
         f"Ce résultat est cohérent avec la littérature scientifique pour "
         f"ce type de prévision atmosphérique à 24h.  \n\n"
-        f"**MAE = {stats['mae']:.2f} µg/m³** : L'erreur absolue moyenne "
-        f"représente environ {stats['mae'] / stats['mean_pm25'] * 100:.0f}% "
+        f"**MAE = {stats['mae']:.2f} µg/m³** — L'erreur absolue moyenne "
+        f"représente environ {stats['mae']/stats['mean_pm25']*100:.0f}% "
         f"de la valeur historique moyenne ({stats['mean_pm25']:.0f} µg/m³), "
         f"ce qui est suffisant pour déclencher des alertes sanitaires de manière fiable."
     )
 
 
 # ═════════════════════════════════════════════════════════════
-# PAGE 4 — GUIDE DES GRAPHES
-# ═════════════════════════════════════════════════════════════
-elif page == "📚 Guide des graphes":
-    st.markdown(
-        """
-    <div class="page-hero">
-        <div class="hero-label">Documentation Interactive</div>
-        <div class="hero-title">Guide Complet<br><span>des Graphes</span></div>
-        <div class="hero-subtitle">
-            Explications détaillées, guides de lecture, et insights clés pour
-            interpréter chaque visualisation du dashboard.
-        </div>
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("---")
-
-    # Charger et afficher le guide en markdown
-    try:
-        with open("GRAPH_GUIDE.md", "r", encoding="utf-8") as f:
-            guide_content = f.read()
-        st.markdown(guide_content)
-    except FileNotFoundError:
-        st.error("""
-        ❌ **Fichier guide introuvable**
-        
-        Le fichier `GRAPH_GUIDE.md` n'a pas été trouvé. 
-        
-        **Solution :**
-        - Assurez-vous que `GRAPH_GUIDE.md` est présent dans le dossier racine du projet
-        - Ou générez-le via : `python -c "# générer guide..."`
-        """)
-
-    st.markdown("---")
-    st.markdown(
-        """
-    <div style="text-align:center;margin-top:40px;padding:30px;background:#F8FAFC;border-radius:12px;">
-        <div style="font-size:11px;color:#64748B;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">
-            Questions ?
-        </div>
-        <div style="font-size:13px;color:#475569;line-height:1.8;">
-            Consultez l'aide locale ou contactez l'équipe data science.
-        </div>
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
-
-
-# ═════════════════════════════════════════════════════════════
-# PAGE 5 — À PROPOS DU PROJET
+# PAGE 4 — À PROPOS DU PROJET
 # ═════════════════════════════════════════════════════════════
 elif page == "À propos du projet":
-    st.markdown(
-        f"""
+
+    st.markdown(f"""
     <div class="page-hero">
         <div class="hero-label">Rapport technique · Smart City · 2025</div>
         <div class="hero-title">
@@ -1842,16 +1334,13 @@ elif page == "À propos du projet":
             <div><div class="hero-meta-label">Modèle retenu</div><div class="hero-meta-value">LightGBM v1.0 — 300 estimateurs</div></div>
         </div>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
     # Section 1 — Contexte
     sec("01", "Contexte & Enjeux")
     c1, c2 = st.columns([3, 2])
     with c1:
-        st.markdown(
-            """
+        st.markdown("""
         <div style="font-family:'Sora',sans-serif;font-size:14px;color:#334155;line-height:1.8;">
         <p>La pollution aux particules fines <strong>PM2.5</strong> constitue l'un des risques
         environnementaux les plus graves pour la santé publique en milieu urbain. À Beijing,
@@ -1864,12 +1353,9 @@ elif page == "À propos du projet":
         permettant d'anticiper les alertes sanitaires, de planifier des restrictions de circulation
         et de communiquer en amont vers les populations vulnérables.</p>
         </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        """, unsafe_allow_html=True)
     with c2:
-        st.markdown(
-            """
+        st.markdown("""
         <div style="background:#FEF2F2;border:1px solid #FECACA;border-left:3px solid #EF4444;
                     border-radius:12px;padding:20px 22px;font-family:'Sora',sans-serif;">
             <div style="font-size:11px;color:#991B1B;text-transform:uppercase;letter-spacing:0.08em;
@@ -1890,18 +1376,15 @@ elif page == "À propos du projet":
                 <span style="color:#64748B;">Dangereux</span><span style="color:#7C3AED;font-weight:600;">&gt; 250 µg/m³</span>
             </div>
         </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        """, unsafe_allow_html=True)
 
     # Section 2 — Données
     sec("02", "Jeu de données")
     d1, d2, d3 = st.columns(3)
-    d1.metric("Observations horaires", "43 824")
+    d1.metric("Observations horaires",  "43 824")
     d2.metric("PM2.5 moyen historique", f"{stats['mean_pm25']:.0f} µg/m³")
-    d3.metric("Features engineered", "39 variables")
-    st.markdown(
-        """
+    d3.metric("Features engineered",    "39 variables")
+    st.markdown("""
     <div style="margin-top:16px;font-family:'Sora',sans-serif;font-size:13px;color:#64748B;margin-bottom:8px;">
         Variables sources du dataset UCI :</div>
     <div class="chips">
@@ -1911,16 +1394,13 @@ elif page == "À propos du projet":
         <span class="chip">Ir (cumul pluie)</span><span class="chip">cbwd (direction vent)</span>
         <span class="chip">year / month / day / hour</span>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
     # Section 3 — Méthodologie
     sec("03", "Méthodologie")
     m1, m2 = st.columns(2)
     with m1:
-        st.markdown(
-            """
+        st.markdown("""
         <div class="tl">
             <div class="tl-item">
                 <div class="tl-dot"></div>
@@ -1937,12 +1417,9 @@ elif page == "À propos du projet":
                 variables météo dérivées (ressenti, produits croisés) et encodages saisonniers.</div>
             </div>
         </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        """, unsafe_allow_html=True)
     with m2:
-        st.markdown(
-            """
+        st.markdown("""
         <div class="tl">
             <div class="tl-item">
                 <div class="tl-dot"></div>
@@ -1959,14 +1436,11 @@ elif page == "À propos du projet":
                 quantifier la contribution de chaque variable — explications globales et locales.</div>
             </div>
         </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        """, unsafe_allow_html=True)
 
     # Section 4 — Résultats
     sec("04", "Résultats & Sélection du modèle")
-    st.markdown(
-        f"""
+    st.markdown(f"""
     <table class="cmp-tbl">
         <thead>
             <tr><th>Modèle</th><th>RMSE (µg/m³)</th><th>MAE (µg/m³)</th><th>R²</th><th>Gain vs Baseline</th></tr>
@@ -1977,9 +1451,9 @@ elif page == "À propos du projet":
             <tr><td>XGBoost</td><td>52.83</td><td>37.91</td><td>0.557</td><td>+1.3%</td></tr>
             <tr class="best">
                 <td>LightGBM <span class="b-best">Retenu</span></td>
-                <td style="color:#10B981;"><strong>{stats["rmse"]:.2f}</strong></td>
-                <td style="color:#10B981;"><strong>{stats["mae"]:.2f}</strong></td>
-                <td style="color:#10B981;"><strong>{stats["r2"]:.3f}</strong></td>
+                <td style="color:#10B981;"><strong>{stats['rmse']:.2f}</strong></td>
+                <td style="color:#10B981;"><strong>{stats['mae']:.2f}</strong></td>
+                <td style="color:#10B981;"><strong>{stats['r2']:.3f}</strong></td>
                 <td style="color:#10B981;"><strong>−0.71%</strong></td>
             </tr>
         </tbody>
@@ -1988,20 +1462,17 @@ elif page == "À propos du projet":
                 border:1px solid #E2E8F0;font-family:'Sora',sans-serif;">
         <div style="font-size:13px;font-weight:600;color:#1E293B;margin-bottom:12px;">Pourquoi LightGBM ?</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px;color:#475569;line-height:1.7;">
-            <div><strong style="color:#10B981;">Meilleur RMSE ({stats["rmse"]:.2f})</strong> : Minimise les grandes
+            <div><strong style="color:#10B981;">Meilleur RMSE ({stats['rmse']:.2f})</strong> — Minimise les grandes
             erreurs de prédiction, critiques pour déclencher des alertes sanitaires au bon moment.</div>
-            <div><strong style="color:#10B981;">Meilleur R² ({stats["r2"]:.3f})</strong> : Capture mieux la variance
+            <div><strong style="color:#10B981;">Meilleur R² ({stats['r2']:.3f})</strong> — Capture mieux la variance
             grâce à la croissance en feuilles (leaf-wise) et aux 300 estimateurs optimisés par TimeSeriesCV.</div>
         </div>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
     # Section 5 — Limites
     sec("05", "Limites & Perspectives")
-    st.markdown(
-        """
+    st.markdown("""
     <div class="lim-grid">
         <div class="lim-card">
             <div class="lim-title">Portée géographique restreinte</div>
@@ -2024,13 +1495,10 @@ elif page == "À propos du projet":
             de télédétection satellite non disponibles dans ce jeu de données.</div>
         </div>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
     # Auteur
-    st.markdown(
-        """
+    st.markdown("""
     <div class="author">
         <div class="av">AN</div>
         <div>
@@ -2048,6 +1516,4 @@ elif page == "À propos du projet":
                 lightgbm · 300 estimateurs · TimeSeriesCV</div>
         </div>
     </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
