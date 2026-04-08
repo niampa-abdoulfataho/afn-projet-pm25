@@ -348,7 +348,7 @@ st.sidebar.markdown("""
         </svg>
     </div>
     <div>
-        <div class="sb-title">Smart City</div>
+        <div class="sb-title">PM2.5 Prediction at Beijing</div>
         <div class="sb-sub">Beijing PM2.5 · J+1</div>
     </div>
 </div>
