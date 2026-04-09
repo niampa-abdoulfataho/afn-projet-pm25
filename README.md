@@ -12,7 +12,7 @@ Cette application prédit la concentration en **PM2.5** (particules fines < 2,5 
 à Beijing pour le lendemain (J+1) à partir des conditions météorologiques et de
 pollution actuelles.
 
-Elle s'appuie sur un modèle **Random Forest** (scikit-learn) entraîné sur le
+Elle s'appuie sur un modèle **LightGBM** (scikit-learn) entraîné sur le
 dataset historique [UCI Beijing PM2.5](https://archive.ics.uci.edu/ml/datasets/Beijing+PM2.5+Data)
 couvrant **43 824 observations horaires** de 2010 à 2014.
 
@@ -85,8 +85,8 @@ Vous pouvez y accéder directement via le lien suivant :\
 
 ### Algorithme retenu
 
-**Random Forest Regressor** — scikit-learn
-- 500 estimateurs
+**LightGBM** 
+- 300 estimateurs
 - Split temporel strict : train 2010–2013 / test 2014
 
 ### Métriques de performance (jeu test 2014)
